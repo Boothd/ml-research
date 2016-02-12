@@ -3,6 +3,8 @@ NCCDC
 
 # Overview
 
+Part of the Naimuri - Machine Learning initiative.
+
 Project to parse PCAP data and analyse using Machine Learning algorithms to categorise packets by IP Protocol type.
 
 ## Data

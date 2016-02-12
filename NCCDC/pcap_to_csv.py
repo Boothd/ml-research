@@ -6,6 +6,8 @@ printing them to STDOUT in CSV format.
 
 Example:
 	$ python __file__ -i pcap_sample_data -n 5 -d
+
+Author: chris.sampson@naimuri.com
 '''
 from pprint import pprint
 import sys, math, time, getopt, logging, os.path

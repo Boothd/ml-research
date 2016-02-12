@@ -1,0 +1,7 @@
+# python pcap_to_csv.py -i data/2014/dayone > data/2014/dayone.csv
+# cat data/2015/dayone.csv | cut -d , -f 10 | sort | uniq -c
+
+
+   3769 1	ICMP
+  62412 17	UDP
+1111060 6	TCP

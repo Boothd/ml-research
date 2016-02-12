@@ -1,4 +1,4 @@
-# tshark -r data/2015/dayone -T fields -e ip.proto 2>/dev/null | sort | uniq -c
+# tshark -r data/2014/dayone -T fields -e ip.proto 2>/dev/null | sort | uniq -c
 
   16819
   50466 1		ICMP
