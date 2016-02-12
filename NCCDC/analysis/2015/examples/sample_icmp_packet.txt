@@ -1,0 +1,45 @@
+###[ Ethernet ]###
+  dst       = 2c:21:72:a5:0c:56
+  src       = 88:e0:f3:e6:61:08
+  type      = IPv4
+###[ IP ]###
+     version   = 4
+     ihl       = 5
+     tos       = 0x0
+     len       = 177
+     id        = 56872
+     flags     = 
+     frag      = 0
+     ttl       = 47
+     proto     = icmp
+     chksum    = 0x1679
+     src       = 108.18.246.164
+     dst       = 10.222.41.22
+     \options   \
+###[ ICMP ]###
+        type      = dest-unreach
+        code      = host-unreachable
+        chksum    = 0xed3d
+        unused    = 0
+###[ IP in ICMP ]###
+           version   = 4
+           ihl       = 5
+           tos       = 0x0
+           len       = 149
+           id        = 10831
+           flags     = 
+           frag      = 0
+           ttl       = 52
+           proto     = udp
+           chksum    = 0xc55e
+           src       = 10.222.41.22
+           dst       = 108.18.246.164
+           \options   \
+###[ UDP in ICMP ]###
+              sport     = 29780
+              dport     = 38883
+              len       = 129
+              chksum    = 0x7189
+###[ Raw ]###
+                 load      = b'%1\x02\xec\xaf9\xbe\x16`}\xc7\xf4\xcd\xb5\xa9Q\xb0\x01\xde]\xd5\x881\x08\x85\xb4N\xbf\x9bW\xb3\xa8\x89Vxp\x12Xxw\x94\x16\xf3v~\xfa/\xd6\x07f\xfdt\n\x9a"K*\x02\xf4\x1a\xf7\xe5\t\xa3\xcb\xe1B\x06?\x9c\x9a\x9c\x8e*\xa6Q\x13\x00&\x89[\xa0\x8a\xbe\xa3\xf0\x1d\xa5e\x9b\xc2\x14\xac\xb7\xc1f\xa7\x11x\xe7\xdbf\xc7\x06\x0fC\xd7\xb6!ev\xd5.\xa5\xa2\xa8!X\xaa\xac\x1d'
+

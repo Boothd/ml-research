@@ -1,0 +1,36 @@
+###[ Ethernet ]###
+  dst       = ff:ff:ff:ff:ff:ff
+  src       = f0:de:f1:9b:ad:6a
+  type      = IPv4
+###[ IP ]###
+     version   = 4
+     ihl       = 5
+     tos       = 0x0
+     len       = 78
+     id        = 18037
+     flags     = 
+     frag      = 0
+     ttl       = 128
+     proto     = udp
+     chksum    = 0x1725
+     src       = 10.121.200.19
+     dst       = 10.121.255.255
+     \options   \
+###[ UDP ]###
+        sport     = netbios_ns
+        dport     = netbios_ns
+        len       = 58
+        chksum    = 0xd8f8
+###[ NBNS query request ]###
+           NAME_TRN_ID= 61941
+           FLAGS     = 272
+           QDCOUNT   = 1
+           ANCOUNT   = 0
+           NSCOUNT   = 0
+           ARCOUNT   = 0
+           QUESTION_NAME= b'ROUTER         '
+           SUFFIX    = workstation
+           NULL      = 0
+           QUESTION_TYPE= NB
+           QUESTION_CLASS= INTERNET
+None

@@ -1,0 +1,28 @@
+###[ Ethernet ]###
+  dst       = 01:00:5e:00:00:16
+  src       = 68:b5:99:f0:2a:87
+  type      = IPv4
+###[ IP ]###
+     version   = 4
+     ihl       = 6
+     tos       = 0x0
+     len       = 40
+     id        = 15196
+     flags     = 
+     frag      = 0
+     ttl       = 1
+     proto     = igmp
+     chksum    = 0x36c4
+     src       = 10.121.200.32
+     dst       = 224.0.0.22
+     \options   \
+      |###[ IP Option Router Alert ]###
+      |  copy_flag = 1
+      |  optclass  = control
+      |  option    = router_alert
+      |  length    = 4
+      |  alert     = router_shall_examine_packet
+###[ Raw ]###
+        load      = b'"\x00\xfa\x01\x00\x00\x00\x01\x03\x00\x00\x00\xe0\x00\x00\xfc'
+###[ Padding ]###
+           load      = '\x00\x00\x00\x00\x00\x00'
