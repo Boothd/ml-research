@@ -65,9 +65,6 @@ def _draw_graph(x_points, y_points, point_labels, x_title, y_title, output_dir=N
     # scale to axes
     plt.autoscale(tight=False)
 
-    # plt.xticks(())
-    # plt.yticks(())
-
     if output_dir is None or output_file is None:
         # display the graph
         plt.show()
@@ -188,7 +185,7 @@ def plot_csv_features(csv_file, output_dir=None, num_records=None, debug=False):
     csv_data = np.genfromtxt(csv_file, delimiter=',', dtype=None, max_rows=num_records)
 
     # plot feature graphs from data
-#    plot_feature_graphs(csv_data, output_dir)
+#     plot_feature_graphs(csv_data, output_dir)
 
     # parse data into structure for further analysis
     dst_data = construct_destination_records(csv_data)
