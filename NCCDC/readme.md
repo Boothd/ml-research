@@ -44,3 +44,53 @@ To parse IP (v4) packets from a PCAP file into a CSV representation (decimalised
 	$ python pcap_to_csv.py -i data/2015/dayone > data/2015/dayone.csv
 
 See `pcap_to_csv.py -h` for more usage details.
+
+### CSV Output
+
+Packets not containing an IP (version = 4) layer are ignored.
+
+Protocols processed for output:
+<dl>
+	<dt>1</dt><dd>ICMP</dd>
+	<dt>6</dt><dd>TCP</dd>
+	<dt>17</dt><dd>UDP</dd>
+</dl>
+
+Fields included in output:
+<ul>
+	<li>Protocol (IP)</li>
+	<li>Time</li>
+	<li>Source (IP Address)</li>
+	<li>Destination (IP Address)</li>
+	<li>Source Port</li>
+	<li>Destination Port</li>
+	<li>Time to Live (IP)</li>
+	<li>Packet Length (IP)</li>
+	<li>Fragment (IP)</li>
+	<li>Flags (TCP)
+		- Bit field indicating:
+		<dl>
+			<dt>1</dt><dd>FIN</dd>
+			<dt>2</dt><dd>SYN</dd>
+			<dt>4</dt><dd>RST</dd>
+			<dt>8</dt><dd>PSH</dd>
+			<dt>16</dt><dd>ACK</dd>
+			<dt>32</dt><dd>URG</dd>
+		</dl>
+	</li>
+</ul>
+
+## Graph Packet features
+
+Parse CSV packet file (in output format from PCAP parser) and produce graphs:
+
+<ul>
+	<li>By Packet Type:
+		<ul>
+			<li>Source IP vs. Destination IP</li>
+			<li>Source Port vs. Destination Port</li>
+			<li>Packet Length vs. Fragment</li>
+			<li>Packet Length vs. Time to Live</li>
+		</ul>
+	</li>
+</ul>

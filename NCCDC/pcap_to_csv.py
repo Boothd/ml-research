@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Parse PCAP data from a file using the scapy python library
 
@@ -11,22 +12,18 @@ Author: chris.sampson@naimuri.com
 '''
 from pprint import pprint
 import sys, math, time, getopt, logging, os.path
+from timeit import default_timer as timer
 
 # import scapy library, ignoring IPv6 warnings (as we're only interested in IPv4 for this script)
 scapy_rt_logger = logging.getLogger("scapy.runtime")
 scapy_rt_orig_level = scapy_rt_logger.level
 scapy_rt_logger.setLevel(logging.ERROR)
-from scapy.all import PcapReader, IP_PROTOS
+from scapy.all import PcapReader
 scapy_rt_logger.setLevel(scapy_rt_orig_level)
-
 
 
 DEFAULT_NUM_RECORDS = -1
 '''int:	Default value for number of records to be output, -1 = output all records'''
-
-IP_PROTOS_REVERSE = dict((str(IP_PROTOS[k]), k) for k in IP_PROTOS.keys())
-'''dict:	Reverse look-up dictionary for IP Protocol names'''
-
 
 
 def _print_usage(exit_code=0):
@@ -74,6 +71,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 	'''Parse pcap file content, extracting details of IP (v4) records and output details to STDOUT
 
 	Fields included in output:
+		protocol (IP)
 		time
 		source (IP Address)
 		destination (IP Address)
@@ -82,7 +80,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 		time to live (IP)
 		length (IP)
 		fragment (IP)
-		protocol (IP)
+		flags (TCP)
 
 	Packets not containing an IP (version = 4) layer are ignored.
 
@@ -90,6 +88,14 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 		1:	ICMP
 		6:	TCP
 		17:	UDP
+
+	Flags bit field indicating:
+		1:	FIN
+		2:	SYN
+		4:	RST
+		8:	PSH
+		16:	ACK
+		32:	URG
 
 	Args:
 		pcap_file (str):	Filename of PCAP file data to be read
@@ -106,36 +112,27 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 			# check the packet contains IP (v4) details
 			if 'IP' in pkt and pkt['IP'].version == 4 and pkt['IP'].proto in (1, 6, 17):
 				try:
-					# extract time, source Ip, destination IP, source port, destination port, time to live, length, fragment, protocol
+					# extract time, source IP, destination IP, source port, destination port, time to live, length, fragment, protocol
 					t = math.floor(pkt.time)
-					src = pkt['IP'].src
-					dst = pkt['IP'].dst
-					sport = str(pkt.sport)
-					dport = str(pkt.dport)
-					ipttl = str(pkt['IP'].ttl)
-					iplen = str(pkt['IP'].len)
-					ipfrag = str(pkt['IP'].frag)
-					ipproto = str(pkt['IP'].proto)
+					src = pkt.sprintf("%IP.src%")
+					dst = pkt.sprintf("%IP.dst%")
+					ipproto = pkt.sprintf("%r,IP.proto%")
 
 					# debug out in more human-readable format
 					if debug:
-						ipproto_name = IP_PROTOS_REVERSE[ipproto]
+						ipproto_name = pkt.sprintf("%IP.proto%")
 
 						print(','.join(
-										(
-											str(record_index),
-											time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime(t)),
-											src,
-											dst,
-											sport,
-											dport,
-											ipttl,
-											iplen,
-											ipfrag,
-											ipproto_name
-										)
+									(
+										str(record_index),
+										ipproto_name,
+										time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime(t)),
+										src,
+										dst,
+										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%TCP.flags%}").replace("??", "0")
 									)
-								, file=sys.stderr)
+								)
+							, file=sys.stderr)
 
 						if ipproto_name in protocols:
 							protocols[ipproto_name] += 1
@@ -146,15 +143,12 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 					print(','.join(
 									(
 										str(record_index),
+										str(ipproto),
 										str(t),
 										str(ipv4_to_int(src)),
 										str(ipv4_to_int(dst)),
-										sport,
-										dport,
-										ipttl,
-										iplen,
-										ipfrag,
-										ipproto
+										# flags = 0 if no TCP layer present
+										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%r,TCP.flags%}").replace("??", "0")
 									)
 								)
 							)
@@ -162,8 +156,12 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 					# stop parsing if reached requested limit
 					if num_records != DEFAULT_NUM_RECORDS and record_index >= num_records:
 						break
+
 					record_index += 1
-				except AttributeError:
+					if record_index % 100000 == 0:
+						print(str(record_index) + ": " + time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime()), file=sys.stderr)
+				except AttributeError as ae:
+					print(str(record_index) + ": " + str(ae), file=sys.stderr)
 					pass
 
 	if debug and len(protocols) > 0:
@@ -176,6 +174,9 @@ def main(argv):
 		argv (list):	List of command line arguments
 
 	'''
+	print("Start: " + time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime()), file=sys.stderr)
+	start = timer()
+
 	inputfile = ''
 	num_records = DEFAULT_NUM_RECORDS
 	debug = False
@@ -211,7 +212,9 @@ def main(argv):
 
 	parse_pcap_ipv4(inputfile, num_records, debug)
 
-
+	end = timer()
+	print("End: " + time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime()), file=sys.stderr)
+	print("Time Taken (seconds): " + str(end - start), file=sys.stderr)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
