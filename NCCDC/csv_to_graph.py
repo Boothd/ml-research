@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Parse CSV data from a file and plot features in a graph
 
@@ -13,6 +14,8 @@ import sys, getopt, os.path, struct, socket
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+from timeit import default_timer as timer
 
 '''int:    Bits representing TCP Flags'''
 # FLAG_FIN = 1
@@ -82,27 +85,39 @@ def _draw_graph(x_points, y_points, point_labels, x_title, y_title, output_dir=N
         plt.savefig(os.path.join(output_dir, output_file))
     plt.close()
 
-def _plot_feature_graphs(csv_data, output_dir=None):
+def _plot_feature_graphs(csv_data, output_dir=None, debug=False):
     '''
     Plot several 2D graphs comparing standard features of the data
     '''
     # get known protocol values
     protocols = csv_data[:, IND_PROTOCOL]
+    if debug:
+        print("Protocol extracted (seconds): " + str(timer() - start))
 
     # plot source/destination IPs
     _draw_graph(csv_data[:, IND_SOURCE_IP], csv_data[:, IND_DEST_IP], protocols, 'Source IP', 'Destination IP', output_dir, 'dest_source_ip_analysis.png')
+    if debug:
+        print("Src/Dest IP plotted (seconds): " + str(timer() - start))
 
     # plot source/destination ports
     _draw_graph(csv_data[:, IND_SOURCE_PORT], csv_data[:, IND_DEST_PORT], protocols, 'Source Port', 'Destination Port', output_dir, 'dest_source_port_analysis.png')
+    if debug:
+        print("Src/Dest Port plotted (seconds): " + str(timer() - start))
 
     # plot time to live/length
     _draw_graph(csv_data[:, IND_TTL], csv_data[:, IND_LENGTH], protocols, 'Time to Live', 'Packet Length', output_dir, 'length_ttl_analysis.png')
+    if debug:
+        print("TTL/Length IP plotted (seconds): " + str(timer() - start))
 
     # plot length/fragment
     _draw_graph(csv_data[:, IND_LENGTH], csv_data[:, IND_FRAGMENT], protocols, 'Packet Length', 'Fragment', output_dir, 'fragment_length_analysis.png')
+    if debug:
+        print("Length/Fragment IP plotted (seconds): " + str(timer() - start))
 
     # src port/flags
     _draw_graph(csv_data[:, IND_SOURCE_PORT], csv_data[:, IND_FLAGS], protocols, 'Source Port', 'Flags', output_dir, 'tcpflags_source_port_analysis.png')
+    if debug:
+        print("Src Port/Flags plotted (seconds): " + str(timer() - start))
 
 def _construct_destination_records(csv_data):
     '''
@@ -311,13 +326,22 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
     '''
     # read CSV file into Numpy multi-dimensional arrays
     csv_data = np.genfromtxt(csv_file, delimiter=',', dtype=None, max_rows=num_records)
+    if debug:
+        print("CSV to array (seconds): " + str(timer() - start), file=sys.stderr)
 
     # plot feature graphs from data
-    _plot_feature_graphs(csv_data, output_dir)
+    _plot_feature_graphs(csv_data, output_dir, debug)
+    if debug:
+        print("Graphs plotted (seconds): " + str(timer() - start), file=sys.stderr)
 
     # parse data into structures for further analysis
     dst_data = _construct_destination_records(csv_data)
+    if debug:
+        print("Destination IPs (seconds): " + str(timer() - start), file=sys.stderr)
+
     src_data = _construct_source_records(csv_data)
+    if debug:
+        print("Source IPs (seconds): " + str(timer() - start), file=sys.stderr)
 
     # create list of IPs (source & dest) with:
     # [received bytes, incoming connections, sent bytes, outgoing connections]
@@ -344,6 +368,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
     if debug:
         print("Num: " + str(len(sources)) + ", Min: " + str(min(sources)) + ", Max: " + str(max(sources)) + ", Avg: " + str(sum(sources) / len(sources)), file=sys.stderr)
         sources = None
+        print("Destination Graphs (seconds): " + str(timer() - start), file=sys.stderr)
 
     # iterate through Source IPs, record details of IP connections
     for src in src_data:
@@ -356,6 +381,8 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
     # TODO: "bowtie" plot each IP's incoming/outgoing data/connections *** pie charts??
 #     from pprint import pprint
 #     pprint(ips)
+    if debug:
+        print("IP Details (seconds): " + str(timer() - start), file=sys.stderr)
 
 def main(argv):
     '''Parse input args and run the PCAP data CSV parser on specified inputfile (-i)
@@ -364,6 +391,7 @@ def main(argv):
         argv (list):    List of command line arguments
 
     '''
+    start = timer()
     inputfile = ''
     outputdir = None
     num_records = None
@@ -419,7 +447,9 @@ def main(argv):
             print('Lower bounds is: ' + str(lower_bounds), file=sys.stderr)
 
     plot_csv_features(inputfile, lower_bounds, outputdir, num_records, debug)
-
+    if debug:
+        end = timer()
+        print("Execution time (seconds):" + str(end - start), file=sys.stderr)
 
 
 if __name__ == "__main__":
