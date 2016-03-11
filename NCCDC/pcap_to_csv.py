@@ -11,7 +11,7 @@ Example:
 Author: chris.sampson@naimuri.com
 '''
 from pprint import pprint
-import sys, math, time, getopt, logging, os.path
+import sys, math, time, getopt, logging, os.path, struct, socket
 from timeit import default_timer as timer
 
 # import scapy library, ignoring IPv6 warnings (as we're only interested in IPv4 for this script)
@@ -52,20 +52,7 @@ def ipv4_to_int(ip_address):
 		int:	Decimal representation of all IP (v4) Address bytes
 
 	'''
-	# split IP (v4) address into byte segments
-	ip_address_in_array = ip_address.split('.');
-	result = 0;
-
-	# 1. 192 * 256^3
-	# 2. 168 * 256^2
-	# 3. 1 * 256^1
-	# 4. 2 * 256^0
-	for i in range(0, len(ip_address_in_array)):
-		power = 3 - i;
-		ip = int(ip_address_in_array[i]);
-		result += ip * math.pow(256, power);
-
-	return int(result)
+	return struct.unpack('L', socket.inet_aton(ip_address))[0]
 
 def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 	'''Parse pcap file content, extracting details of IP (v4) records and output details to STDOUT
