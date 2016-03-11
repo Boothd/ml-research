@@ -1,6 +1,6 @@
 # This is a version simple program to show how HMM could be applied to DOS attacks given know
 # precursor events, in this example we are using one precursor, but there could be multiple.
-# the precusrors could be linked to each other or independant.
+# the precursor could be linked to each other or independant.
 # 
 #
 # The program requires the installation of anaconda, sci-kit learn and hmmlearn.
