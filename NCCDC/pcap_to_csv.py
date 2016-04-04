@@ -116,7 +116,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 										time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime(t)),
 										src,
 										dst,
-										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%TCP.flags%}").replace("??", "0")
+										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%TCP.flags%}")
 									)
 								)
 							, file=sys.stderr)
@@ -135,7 +135,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 										str(ipv4_to_int(src)),
 										str(ipv4_to_int(dst)),
 										# flags = 0 if no TCP layer present
-										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%r,TCP.flags%}").replace("??", "0")
+										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%r,TCP.flags%}")
 									)
 								)
 							)

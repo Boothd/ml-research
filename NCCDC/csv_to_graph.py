@@ -10,15 +10,16 @@ Example:
 
 Author: chris.sampson@naimuri.com
 '''
+'''int:    Bits representing TCP Flags'''
+# FLAG_FIN = 1
+
 import sys, getopt, os.path, struct, socket
+from timeit import default_timer as timer
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from timeit import default_timer as timer
 
-'''int:    Bits representing TCP Flags'''
-# FLAG_FIN = 1
 FLAG_SYN = 2
 # FLAG_RST = 4
 # FLAG_PSH = 8
@@ -40,6 +41,9 @@ IND_FLAGS = 10
 
 '''int:    Default lower bounds limit'''
 DEFAULT_LOWER_BOUNDS = 200
+
+''' timer:    Start time for script execution'''
+start = timer()
 
 def _print_usage(exit_code=0):
     '''Print usage and exit
@@ -123,7 +127,7 @@ def _construct_destination_records(csv_data):
     '''
     Construct a collection of details about Destination IPs in for format:
         dst_ip {
-            total_bytes (received by dst_ip), num_connections (incoming to dst_ip), port_sources ([dst_port, src_ip, src_port, protocol]),
+            total_bytes (received by dst_ip), num_connections (incoming to dst_ip), port_source_details ([dst_port, src_ip, src_port, protocol]),
             dst_port {
                 total_bytes (received by dst_ip/dst_port), num_connections (incoming to dst_ip/dst_port),
                 src_ip {
@@ -155,13 +159,13 @@ def _construct_destination_records(csv_data):
 
         # Destination IP
         if not dst_ip in dst_data:
-            dst_data[dst_ip] = dict(total_bytes=0, num_connections=0, port_sources=list())
+            dst_data[dst_ip] = dict(total_bytes=0, num_connections=0, port_source_details=list())
         dst_ip_rec = dst_data[dst_ip]
 
         # summarise received data on Destination IP
         dst_ip_rec['total_bytes'] += data_len
         dst_ip_rec['num_connections'] += 1
-        dst_ip_rec['port_sources'].append([dst_port, src_ip, src_port, proto])
+        dst_ip_rec['port_source_details'].append([dst_port, src_ip, src_port, proto])
 
 #         # Destination Port
 #         if not dst_port in dst_ip_rec:
@@ -214,7 +218,7 @@ def _construct_source_records(csv_data):
     '''
     Construct a collection of details about Source IPs in for format:
         src_ip {
-            total_bytes (sent from src_ip), num_connections (sent from src_ip), port_destinations ([src_port, dst_ip, dst_port, protocol]),
+            total_bytes (sent from src_ip), num_connections (sent from src_ip), port_destination_details ([src_port, dst_ip, dst_port, protocol]),
             src_port {
                 total_bytes (sent from src_ip/src_port), num_connections (sent from src_ip/src_port),
                 dst_ip {
@@ -246,13 +250,13 @@ def _construct_source_records(csv_data):
 
         # Source IP
         if not src_ip in src_data:
-            src_data[src_ip] = dict(total_bytes=0, num_connections=0, port_destinations=list())
+            src_data[src_ip] = dict(total_bytes=0, num_connections=0, port_destination_details=list())
         src_ip_rec = src_data[src_ip]
 
         # summarise sent data from Source IP
         src_ip_rec['total_bytes'] += data_len
         src_ip_rec['num_connections'] += 1
-        src_ip_rec['port_destinations'].append([src_port, dst_ip, dst_port, proto])
+        src_ip_rec['port_destination_details'].append([src_port, dst_ip, dst_port, proto])
 
 #         # Source Port
 #         if not src_port in src_ip_rec:
@@ -325,23 +329,30 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
         debug (bool):      Whether to output debug information while parsing packets (default: False)
     '''
     # read CSV file into Numpy multi-dimensional arrays
-    csv_data = np.genfromtxt(csv_file, delimiter=',', dtype=None, max_rows=num_records)
+    csv_data = np.genfromtxt(csv_file,
+                            delimiter=',',
+                            autostrip=True,
+                            dtype=None,
+                            missing_values='?',
+                            filling_values='0',
+                            invalid_raise=False,
+                            max_rows=num_records)
     if debug:
         print("CSV to array (seconds): " + str(timer() - start), file=sys.stderr)
 
     # plot feature graphs from data
-    _plot_feature_graphs(csv_data, output_dir, debug)
-    if debug:
-        print("Graphs plotted (seconds): " + str(timer() - start), file=sys.stderr)
+#     _plot_feature_graphs(csv_data, output_dir, debug)
+#     if debug:
+#         print("Graphs plotted (seconds): " + str(timer() - start), file=sys.stderr)
 
     # parse data into structures for further analysis
     dst_data = _construct_destination_records(csv_data)
     if debug:
         print("Destination IPs (seconds): " + str(timer() - start), file=sys.stderr)
 
-    src_data = _construct_source_records(csv_data)
-    if debug:
-        print("Source IPs (seconds): " + str(timer() - start), file=sys.stderr)
+#     src_data = _construct_source_records(csv_data)
+#     if debug:
+#         print("Source IPs (seconds): " + str(timer() - start), file=sys.stderr)
 
     # create list of IPs (source & dest) with:
     # [received bytes, incoming connections, sent bytes, outgoing connections]
@@ -350,7 +361,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
     # iterate through Destination IPs, record details of IP connections and plot information about connected sources
     sources = list()
     for dst in dst_data:
-        dst_port_srcs = dst_data[dst]['port_sources']
+        dst_port_srcs = dst_data[dst]['port_source_details']
 
         # add destination to IP list
         if not dst in ips:
@@ -371,12 +382,12 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
         print("Destination Graphs (seconds): " + str(timer() - start), file=sys.stderr)
 
     # iterate through Source IPs, record details of IP connections
-    for src in src_data:
-        if not src in ips:
-            ips[src] = [0, 0, src_data[src]['total_bytes'], src_data[src]['num_connections']]
-        else:
-            ips[src][2] = src_data[src]['total_bytes']
-            ips[src][3] = src_data[src]['num_connections']
+#     for src in src_data:
+#         if not src in ips:
+#             ips[src] = [0, 0, src_data[src]['total_bytes'], src_data[src]['num_connections']]
+#         else:
+#             ips[src][2] = src_data[src]['total_bytes']
+#             ips[src][3] = src_data[src]['num_connections']
 
     # TODO: "bowtie" plot each IP's incoming/outgoing data/connections *** pie charts??
 #     from pprint import pprint
