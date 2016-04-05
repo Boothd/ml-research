@@ -182,17 +182,18 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
     if debug:
         print("CSV to array (seconds): " + str(timer() - start), file=sys.stderr)
 
-
     # XXX: plot feature graphs from data
-#     _plot_feature_graphs(csv_data, output_dir, debug)
+#     feature_graphs_dir = os.path.join(output_dir, "feature_graphs")
+#     os.makedirs(feature_graphs_dir, exist_ok=True)
+#     _plot_feature_graphs(csv_data, feature_graphs_dir, debug)
 #     if debug:
 #         print("Graphs plotted (seconds): " + str(timer() - start), file=sys.stderr)
 
-    # sort data by Destination IP
-    sorted_data = np.sort(csv_data, order=COL_DEST_IP)
+    # sort data by Destination IP and Timestamp
+    sorted_dst_data = np.sort(csv_data, order=[COL_DEST_IP, COL_TIME])
 
     # Split data into sub-arrays based on Destination IP
-    dst_ips = np.split(sorted_data, np.where(np.diff(sorted_data[COL_DEST_IP]))[0] + 1)
+    dst_ips = np.split(sorted_dst_data, np.where(np.diff(sorted_dst_data[COL_DEST_IP]))[0] + 1)
     if debug:
         print("Destination IPs (seconds): " + str(timer() - start), file=sys.stderr)
 
@@ -202,13 +203,31 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
         d = 0
 
     # iterate through collections of Destination IP data and output analysis (if applicable)
+    ips = {}
     for dst_data in dst_ips:
-        if len(dst_data) >= lower_bounds:
-            # determine current Destination IP
-            dst_ip = dst_data[0][COL_DEST_IP]
+        # determine current Destination IP and number of connection records
+        dst_ip = dst_data[0][COL_DEST_IP]
+        num_connections = len(dst_data)
 
+        # log received data stats for the IP
+        ips[str(dst_ip)] = dict(bytes_received=np.sum(dst_data[COL_LENGTH]),
+                                received_connections=num_connections,
+                                dst_details=dst_data,
+                                bytes_sent=0,
+                                sent_connections=0,
+                                src_details=list())
+
+        # plot graphs if sufficient data to be of interest
+        if num_connections >= lower_bounds:
             # plot Destination Ports vs. Source IP (indicating protocols used)
-            _draw_graph(dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], dst_data[COL_PROTOCOL], 'Destination Port', 'Source IP', _ipv4_int_to_dotted(dst_ip), output_dir, _ipv4_int_to_dotted(dst_ip) + '_destination_ports_and_source_ips.png')
+            dst_src_graphs_dir = os.path.join(output_dir, "dst_src_graphs")
+            os.makedirs(dst_src_graphs_dir, exist_ok=True)
+            _draw_graph(dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], dst_data[COL_PROTOCOL], 'Destination Port', 'Source IP', _ipv4_int_to_dotted(dst_ip), dst_src_graphs_dir, _ipv4_int_to_dotted(dst_ip) + '_destination_ports_and_source_ips.png')
+
+            # timeline plot of single Destination IP
+            dst_time_graphs_dir = os.path.join(output_dir, "dst_time_graphs")
+            os.makedirs(dst_time_graphs_dir, exist_ok=True)
+            _draw_graph(dst_data[COL_TIME], dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], 'Time', 'Destination Port', _ipv4_int_to_dotted(dst_ip), dst_time_graphs_dir, _ipv4_int_to_dotted(dst_ip) + '_time_and_destination_ports.png')
 
         # debug output of the source characteristics for all destinations
         if debug:
@@ -220,7 +239,35 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
         sources = None
         print("Destination Graphs (seconds): " + str(timer() - start), file=sys.stderr)
 
-    # TODO: "bowtie" plot each IP's incoming/outgoing data/connections *** pie charts??
+    # obtain "sent" details for each IP
+    sorted_src_data = np.sort(csv_data, order=[COL_SOURCE_IP, COL_TIME])
+    src_ips = np.split(sorted_src_data, np.where(np.diff(sorted_src_data[COL_SOURCE_IP]))[0] + 1)
+    for src_data in src_ips:
+        # determine current Destination IP and number of connection records
+        src_ip = src_data[0][COL_SOURCE_IP]
+        num_connections = len(src_data)
+
+        # log received data stats for the IP
+        if not src_ip in src_data:
+            ips[str(src_ip)] = dict(bytes_received=0,
+                                    received_connections=0,
+                                    dst_details=list(),
+                                    bytes_sent=np.sum(src_data[COL_LENGTH]),
+                                    sent_connections=num_connections,
+                                    src_details=src_data)
+        else:
+            ips[str(src_ip)]["bytes_sent"] = np.sum(src_data[COL_LENGTH])
+            ips[str(src_ip)]["sent_connections"] = num_connections
+            ips[str(src_ip)]["dst_details"] = list()
+            ips[str(src_ip)]["src_details"] = src_data
+
+    for ip in ips.keys():
+        # TODO: "bowtie" plot each IP's incoming/outgoing data/connections *** pie charts??
+        recv_sent_data_graphs_dir = os.path.join(output_dir, "recv_sent_graphs")
+        os.makedirs(recv_sent_data_graphs_dir, exist_ok=True)
+        pprint([ip, ips[ip]["bytes_received"], ips[ip]["bytes_sent"]], sys.stderr)
+#         _draw_graph([ips[ip]["bytes_received"]], [ips[ip]["bytes_sent"]], [ip], 'Bytes Received', 'Bytes Sent', _ipv4_int_to_dotted(ip), recv_sent_data_graphs_dir, _ipv4_int_to_dotted(ip) + '_bytes_received_and_sent.png')
+
     if debug:
         print("IP Details (seconds): " + str(timer() - start), file=sys.stderr)
 
