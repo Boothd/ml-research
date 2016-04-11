@@ -1,3 +1,4 @@
 eclipse.preferences.version=1
 encoding/csv_to_graph.py=utf-8
 encoding/csv_to_graph_numpy.py=utf-8
+encoding/pcap_to_csv.py=utf-8

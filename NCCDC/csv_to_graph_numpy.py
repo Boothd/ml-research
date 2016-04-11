@@ -182,12 +182,12 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
     if debug:
         print("CSV to array (seconds): " + str(timer() - start), file=sys.stderr)
 
-    # XXX: plot feature graphs from data
-#     feature_graphs_dir = os.path.join(output_dir, "feature_graphs")
-#     os.makedirs(feature_graphs_dir, exist_ok=True)
-#     _plot_feature_graphs(csv_data, feature_graphs_dir, debug)
-#     if debug:
-#         print("Graphs plotted (seconds): " + str(timer() - start), file=sys.stderr)
+    # plot feature graphs from data
+    feature_graphs_dir = os.path.join(output_dir, "feature_graphs")
+    os.makedirs(feature_graphs_dir, exist_ok=True)
+    _plot_feature_graphs(csv_data, feature_graphs_dir, debug)
+    if debug:
+        print("Graphs plotted (seconds): " + str(timer() - start), file=sys.stderr)
 
     # sort data by Destination IP and Timestamp
     sorted_dst_data = np.sort(csv_data, order=[COL_DEST_IP, COL_TIME])
@@ -265,7 +265,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
         # TODO: "bowtie" plot each IP's incoming/outgoing data/connections *** pie charts??
         recv_sent_data_graphs_dir = os.path.join(output_dir, "recv_sent_graphs")
         os.makedirs(recv_sent_data_graphs_dir, exist_ok=True)
-        pprint([ip, ips[ip]["bytes_received"], ips[ip]["bytes_sent"]], sys.stderr)
+#        pprint([ip, ips[ip]["bytes_received"], ips[ip]["bytes_sent"]], sys.stderr)
 #         _draw_graph([ips[ip]["bytes_received"]], [ips[ip]["bytes_sent"]], [ip], 'Bytes Received', 'Bytes Sent', _ipv4_int_to_dotted(ip), recv_sent_data_graphs_dir, _ipv4_int_to_dotted(ip) + '_bytes_received_and_sent.png')
 
     if debug:

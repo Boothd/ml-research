@@ -10,9 +10,11 @@ Example:
 
 Author: chris.sampson@naimuri.com
 '''
+from datetime import datetime
 from pprint import pprint
-import sys, math, time, getopt, logging, os.path, struct, socket
+import sys, getopt, logging, os.path, struct, socket
 from timeit import default_timer as timer
+
 
 # import scapy library, ignoring IPv6 warnings (as we're only interested in IPv4 for this script)
 scapy_rt_logger = logging.getLogger("scapy.runtime")
@@ -52,7 +54,7 @@ def ipv4_to_int(ip_address):
 		int:	Decimal representation of all IP (v4) Address bytes
 
 	'''
-	return struct.unpack('L', socket.inet_aton(ip_address))[0]
+	return struct.unpack('>L', socket.inet_aton(ip_address))[0]
 
 def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 	'''Parse pcap file content, extracting details of IP (v4) records and output details to STDOUT
@@ -100,7 +102,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 			if 'IP' in pkt and pkt['IP'].version == 4 and pkt['IP'].proto in (1, 6, 17):
 				try:
 					# extract time, source IP, destination IP, source port, destination port, time to live, length, fragment, protocol
-					t = math.floor(pkt.time)
+					t = pkt.time
 					src = pkt.sprintf("%IP.src%")
 					dst = pkt.sprintf("%IP.dst%")
 					ipproto = pkt.sprintf("%r,IP.proto%")
@@ -113,7 +115,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 									(
 										str(record_index),
 										ipproto_name,
-										time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime(t)),
+										datetime.utcfromtimestamp(t).strftime('%d/%m/%Y %H:%M:%S.%f'),
 										src,
 										dst,
 										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%TCP.flags%}")
@@ -146,7 +148,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 
 					record_index += 1
 					if record_index % 100000 == 0:
-						print(str(record_index) + ": " + time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime()), file=sys.stderr)
+						print(str(record_index) + ": " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'), file=sys.stderr)
 				except AttributeError as ae:
 					print(str(record_index) + ": " + str(ae), file=sys.stderr)
 					pass
@@ -161,7 +163,7 @@ def main(argv):
 		argv (list):	List of command line arguments
 
 	'''
-	print("Start: " + time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime()), file=sys.stderr)
+	print("Start: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'), file=sys.stderr)
 	start = timer()
 
 	inputfile = ''
@@ -200,7 +202,7 @@ def main(argv):
 	parse_pcap_ipv4(inputfile, num_records, debug)
 
 	end = timer()
-	print("End: " + time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime()), file=sys.stderr)
+	print("End: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'), file=sys.stderr)
 	print("Time Taken (seconds): " + str(end - start), file=sys.stderr)
 
 if __name__ == "__main__":
