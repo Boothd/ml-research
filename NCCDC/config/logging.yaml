@@ -1,0 +1,38 @@
+version: 1
+formatters:
+  threaded:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(processName)s - %(threadName)s - %(message)s'
+filters:
+  pcap_filter:
+    name: pcap_to_csv
+  graph_filter:
+    name: csv_to_graph
+handlers:
+  console_err:
+    class: logging.StreamHandler
+    level: WARN
+    formatter: threaded
+    stream: ext://sys.stderr
+  pcap_file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: threaded
+    filename: log/pcap_to_csv.log
+    backupCount: 3
+    maxBytes: 1048576
+    filters: [pcap_filter]
+  graph_file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: threaded
+    filename: log/csv_to_graph.log
+    backupCount: 3
+    maxBytes: 1048576
+    filters: [graph_filter]
+loggers:
+  logger:
+    handlers: [pcap_file, graph_file]
+    propagate: no
+root:
+  level: DEBUG
+  handlers: [console_err, pcap_file, graph_file]

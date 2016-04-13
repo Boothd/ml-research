@@ -6,13 +6,14 @@ This script parses PCAP data from a specified pcap file and extracts IP (v4) pac
 printing them to STDOUT in CSV format.
 
 Example:
-	$ python __file__ -i pcap_sample_data -n 5 -d
+	$ python __file__ -i pcap_sample_data -n 5
 
 Author: chris.sampson@naimuri.com
 '''
 from datetime import datetime
+import logging.config, yaml
 from pprint import pprint
-import sys, getopt, logging, os.path, struct, socket
+import sys, getopt, os.path, struct, socket
 from timeit import default_timer as timer
 
 
@@ -23,9 +24,12 @@ scapy_rt_logger.setLevel(logging.ERROR)
 from scapy.all import PcapReader
 scapy_rt_logger.setLevel(scapy_rt_orig_level)
 
-
 DEFAULT_NUM_RECORDS = -1
 '''int:	Default value for number of records to be output, -1 = output all records'''
+
+# setup logging config
+logging.config.dictConfig(yaml.load(open(os.path.join('config', 'logging.yaml'))))
+logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
 
 def _print_usage(exit_code=0):
@@ -37,10 +41,9 @@ def _print_usage(exit_code=0):
 	'''
 	f = sys.stderr if exit_code > 0 else sys.stdout
 
-	print(__file__ + " -i <input file> [-n <number of records to parse>] [-d]", file=f)
+	print(__file__ + " [-i <input file>] [-n <number of records to parse>] [-d]", file=f)
 	print("-i <input file>: PCAP format data file to be parsed")
 	print("-n <num_records>: (optional) number of packets to be output from <input file>; default to output all packets")
-	print("-d: debug output")
 
 	sys.exit(exit_code)
 
@@ -56,7 +59,7 @@ def ipv4_to_int(ip_address):
 	'''
 	return struct.unpack('>L', socket.inet_aton(ip_address))[0]
 
-def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
+def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS):
 	'''Parse pcap file content, extracting details of IP (v4) records and output details to STDOUT
 
 	Fields included in output:
@@ -89,7 +92,6 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 	Args:
 		pcap_file (str):	Filename of PCAP file data to be read
 		num_records (int):	Number of records to be output from parsed PCAP file (not including ignored records)
-		debug (bool):		Whether to output debug information while parsing packets
 
 	'''
 	protocols = {}
@@ -108,10 +110,10 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 					ipproto = pkt.sprintf("%r,IP.proto%")
 
 					# debug out in more human-readable format
-					if debug:
+					if logger.isEnabledFor(logging.DEBUG):
 						ipproto_name = pkt.sprintf("%IP.proto%")
 
-						print(','.join(
+						logger.debug(','.join(
 									(
 										str(record_index),
 										ipproto_name,
@@ -120,8 +122,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 										dst,
 										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%TCP.flags%}")
 									)
-								)
-							, file=sys.stderr)
+								))
 
 						if ipproto_name in protocols:
 							protocols[ipproto_name] += 1
@@ -147,13 +148,13 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS, debug=False):
 						break
 
 					record_index += 1
-					if record_index % 100000 == 0:
-						print(str(record_index) + ": " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'), file=sys.stderr)
+					if logger.isEnabledFor(logging.DEBUG) and record_index % 100000 == 0:
+						logger.debug(str(record_index) + ": " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
 				except AttributeError as ae:
-					print(str(record_index) + ": " + str(ae), file=sys.stderr)
+					logger.warn(str(record_index) + ": " + str(ae))
 					pass
 
-	if debug and len(protocols) > 0:
+	if logger.isEnabledFor(logging.DEBUG) and len(protocols) > 0:
 		pprint(protocols)
 
 def main(argv):
@@ -163,15 +164,14 @@ def main(argv):
 		argv (list):	List of command line arguments
 
 	'''
-	print("Start: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'), file=sys.stderr)
+	logger.info("Start: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
 	start = timer()
 
 	inputfile = ''
 	num_records = DEFAULT_NUM_RECORDS
-	debug = False
 
 	try:
-		opts, _ = getopt.getopt(argv, "hdi:n:")
+		opts, _ = getopt.getopt(argv, "hi:n:")
 	except getopt.GetoptError:
 		_print_usage(1)
 
@@ -181,29 +181,26 @@ def main(argv):
 		elif opt == '-i':
 			inputfile = arg
 			if not os.path.isfile(inputfile):
-				print("Invalid inputfile (-i), file does not exist", file=sys.stderr)
+				logger.error("Invalid inputfile (-i), file does not exist")
 				sys.exit(2)
-		elif opt == '-d':
-			debug = True
 		elif opt == '-n':
 			try:
 				num_records = int(arg)
 				if num_records < 1:
-					print("Number of records (-n) must be greater than 0", file=sys.stderr)
+					logger.error("Number of records (-n) must be greater than 0")
 					sys.exit(3)
 			except Exception:
-				print("Unable to parse number of records (-n), must be numeric", file=sys.stderr)
+				logger.error("Unable to parse number of records (-n), must be numeric")
 				sys.exit(4)
 
-	if debug:
-		print('Input file is: ' + inputfile, file=sys.stderr)
-		print('Number of records is: : ' + str(num_records), file=sys.stderr)
+	logger.info('Input file is: ' + inputfile)
+	logger.info('Number of records is: : ' + str(num_records))
 
-	parse_pcap_ipv4(inputfile, num_records, debug)
+	parse_pcap_ipv4(inputfile, num_records)
 
 	end = timer()
-	print("End: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'), file=sys.stderr)
-	print("Time Taken (seconds): " + str(end - start), file=sys.stderr)
+	logger.info("End: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
+	logger.info("Time Taken (seconds): " + str(end - start))
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
