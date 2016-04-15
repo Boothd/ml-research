@@ -396,7 +396,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
             conn_time_counts = np.ones([len(conn_times), 2])
             # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
             conn_time_counts[:, 0] = conn_times
-            conns.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', marker='.', color='y', label='Any')
+            conns.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', marker='.', color='y', label="Any (" + str(len(conn_times)) + ")")
             conns.set_ylabel("#Connections")
             num_graphs += 1
 
@@ -408,7 +408,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                 syn_time_counts = np.ones([len(syn_times), 2])
                 # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                 syn_time_counts[:, 0] = syn_times
-                conns.plot(syn_time_counts[:, 0], np.cumsum(syn_time_counts[:, 1]), linestyle='-', marker='x', color='r', label='SYN')
+                conns.plot(syn_time_counts[:, 0], np.cumsum(syn_time_counts[:, 1]), linestyle='-', marker='x', color='r', label="SYN (" + str(len(syn_connections)) + ")")
                 num_graphs += 1
 
             ack_connections = dst_data[np.where(dst_data[COL_FLAGS] & FLAG_ACK == FLAG_ACK)]
@@ -418,7 +418,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                 ack_time_counts = np.ones([len(ack_times), 2])
                 # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                 ack_time_counts[:, 0] = ack_times
-                conns.plot(ack_time_counts[:, 0], np.cumsum(ack_time_counts[:, 1]), linestyle='-', marker='o', color='g', label='ACK')
+                conns.plot(ack_time_counts[:, 0], np.cumsum(ack_time_counts[:, 1]), linestyle='-', marker='o', color='g', label="ACK (" + str(len(ack_connections)) + ")")
                 num_graphs += 1
 
             # add legend for the different types of flags in the connections
