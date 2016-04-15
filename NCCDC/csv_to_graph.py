@@ -360,7 +360,6 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
             # sizes, labels, colours, title, explode=None, output_dir=None, output_file=None
             pie_conns.pie([recv_conns, sent_conns], labels=['#Received', '#Sent'], explode=[0.1, 0], colors=['r', 'g'], autopct='%1.1f%%', shadow=True, startangle=90)
             pie_conns.axis('equal')  # set aspect ratio to be equal so that pie is drawn as a circle.
-            # _draw_pie_chart([recv_conns, sent_conns], ['#Received', '#Sent'], ['r', 'g'], 'IP Connections', [0.1, 0], dst_dir, 'ip_connections.png')
             num_graphs += 1
 
             # plot total Received vs. Sent bytes
@@ -368,7 +367,6 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
             sent_bytes = dst_rec['sent_bytes']
             pie_bytes.pie([recv_bytes, sent_bytes], labels=['Bytes Received', 'Bytes Sent'], explode=[0.1, 0], colors=['y', 'b'], autopct='%1.1f%%', shadow=True, startangle=90)
             pie_bytes.axis('equal')  # set aspect ratio to be equal so that pie is drawn as a circle.
-            # _draw_pie_chart([recv_bytes, sent_bytes], ['Received', 'Sent'], ['r', 'g'], 'IP Data (Bytes)', [0.1, 0], dst_dir, 'ip_bytes.png')
             num_graphs += 1
 
             # scale & save image to output dir
@@ -383,13 +381,12 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
 
             # set figure title and x-axis
             dst_ports.set_title("%s - Time Series Analysis".format(dst_str))
-            # TODO: brecv.xlabel('Time / ms')
+            brecv.set_xlabel('Time / ms')
 
             # time-series plot of single Destination IP (indicating Source IPs)
             # unlikely there will be many duplicates when time being considered
             dst_ports.scatter(dst_data[COL_TIME], dst_data[COL_DEST_PORT], c=dst_data[COL_SOURCE_IP], cmap=plt.cm.get_cmap('Paired'))
-            # TODO: dst_ports.ylabel('Destination Port')
-            # _draw_scatter_graph(dst_data[COL_TIME], dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], 'Time / ms', 'Destination Port', _ipv4_int_to_dotted(dst_ip), dst_dir, 'ports_over_time.png')
+            dst_ports.set_ylabel('Destination Port')
             num_graphs += 1
 
             # plot received #connections over time (cumulative sum of connections along the time-sorted array)
@@ -399,9 +396,8 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
             conn_time_counts = np.ones([len(conn_times), 2])
             # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
             conn_time_counts[:, 0] = conn_times
-            conns.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', marker='.', color='y')
-            # TODO: conns.ylabel("#Connections")
-            # _draw_line_graph(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), 'Time/ms', '#Connections', 'Connections Received / Time', dst_dir, 'connections_over_time.png')
+            conns.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', marker='.', color='y', label='Any')
+            conns.set_ylabel("#Connections")
             num_graphs += 1
 
             # get the times from the packet data
@@ -412,14 +408,25 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                 syn_time_counts = np.ones([len(syn_times), 2])
                 # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                 syn_time_counts[:, 0] = syn_times
-                conns.plot(syn_time_counts[:, 0], np.cumsum(syn_time_counts[:, 1]), linestyle='-', marker='x', color='r')
-                # _draw_line_graph(syn_time_counts[:, 0], np.cumsum(syn_time_counts[:, 1]), 'Time/ms', '#Connections', 'SYN Connections Received / Time', dst_dir, 'syn_connections_over_time.png')
+                conns.plot(syn_time_counts[:, 0], np.cumsum(syn_time_counts[:, 1]), linestyle='-', marker='x', color='r', label='SYN')
                 num_graphs += 1
 
+            ack_connections = dst_data[np.where(dst_data[COL_FLAGS] & FLAG_ACK == FLAG_ACK)]
+            if len(ack_connections) > 0:
+                ack_times = np.array(ack_connections[COL_TIME])
+                # create a 2S array of 1s, the same length as the number of connections (times)
+                ack_time_counts = np.ones([len(ack_times), 2])
+                # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
+                ack_time_counts[:, 0] = ack_times
+                conns.plot(ack_time_counts[:, 0], np.cumsum(ack_time_counts[:, 1]), linestyle='-', marker='o', color='g', label='ACK')
+                num_graphs += 1
+
+            # add legend for the different types of flags in the connections
+            conns.legend(loc=2)
+
             # plot bytes received over time (cumulative sum of packet lengths along the time-sorted array)
-            brecv.plot(dst_data[COL_TIME], np.cumsum(dst_data[COL_LENGTH]), linestyle='-', marker='o', color='g')
-            # TODO: brecv.ylabel("Bytes Received")
-            # _draw_line_graph(dst_data[COL_TIME], np.cumsum(dst_data[COL_LENGTH]), 'Time / ms', 'Bytes Received', 'Bytes Received / Time', dst_dir, 'bytes_over_time.png')
+            brecv.plot(dst_data[COL_TIME], np.cumsum(dst_data[COL_LENGTH]), linestyle='-', marker='o', color='b')
+            brecv.set_ylabel("Bytes Received")
             num_graphs += 1
 
             # scale & save image to output dir
