@@ -10,15 +10,19 @@ Example:
 
 Author: chris.sampson@naimuri.com
 '''
+'''int:    Bits representing TCP Flags'''
+# FLAG_FIN = 1
+
 import logging.config, yaml
 import sys, getopt, os.path, struct, socket
 from timeit import default_timer as timer
 
+import matplotlib
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-'''int:    Bits representing TCP Flags'''
-# FLAG_FIN = 1
+
 FLAG_SYN = 2
 # FLAG_RST = 4
 # FLAG_PSH = 8
@@ -75,6 +79,29 @@ def _ipv4_int_to_dotted(ip_address):
     '''
     return socket.inet_ntoa(struct.pack("!L", int(ip_address)))
 
+def _start_plot():
+    # create a new figure
+    fig = plt.figure(figsize=(8, 6))
+    plt.clf()
+
+    return fig
+
+def _finish_plot(title, output_dir=None, output_file=None):
+
+    # add title
+    plt.title(title)
+
+    # scale to axes
+    plt.autoscale(tight=False)
+
+    if output_dir is None or output_file is None:
+        # display the graph
+        plt.show()
+    else:
+        # save image to output dir
+        plt.savefig(os.path.join(output_dir, output_file))
+    plt.close()
+
 def _draw_scatter_graph(x_points, y_points, point_labels, x_title, y_title, title, output_dir=None, output_file=None, cmap_name='Paired'):
     '''
     Draw a 2D scatter graph using matplotlib and either save to output_dir or display to user
@@ -82,8 +109,7 @@ def _draw_scatter_graph(x_points, y_points, point_labels, x_title, y_title, titl
     step_start = timer()
 
     # create a new figure
-    plt.figure(figsize=(8, 6))
-    plt.clf()
+    _start_plot()
 
     # plot the points
     plt.scatter(x_points, y_points, c=point_labels, cmap=plt.cm.get_cmap(cmap_name))
@@ -92,21 +118,31 @@ def _draw_scatter_graph(x_points, y_points, point_labels, x_title, y_title, titl
     plt.xlabel(x_title)
     plt.ylabel(y_title)
 
-    # add title
-    plt.title(title)
+    # complete and save/show the plot
+    _finish_plot(title, output_dir, output_file)
 
-    # scale to axes
-    plt.autoscale(tight=False)
+    logger.debug("%s plotted %d points (seconds): %f", title, len(x_points), timer() - step_start)
 
-    if output_dir is None or output_file is None:
-        # display the graph
-        plt.show()
-    else:
-        # save image to output dir
-        plt.savefig(os.path.join(output_dir, output_file))
-    plt.close()
+def _draw_line_graph(x_points, y_points, x_title, y_title, title, output_dir=None, output_file=None):
+    '''
+    Draw a 2D line graph using matplotlib and either save to output_dir or display to user
+    '''
+    step_start = timer()
 
-    logger.debug("%s plotted %d points (seconds): %f", title, len(point_labels), timer() - step_start)
+    # create a new figure
+    _start_plot()
+
+    # plot the points
+    plt.plot(x_points, y_points, linestyle='-', markers='o', color='r')
+
+    # add axis labels
+    plt.xlabel(x_title)
+    plt.ylabel(y_title)
+
+    # complete and save/show the plot
+    _finish_plot(title, output_dir, output_file)
+
+    logger.debug("%s plotted %d points (seconds): %f", title, len(x_points), timer() - step_start)
 
 def _draw_pie_chart(sizes, labels, colours, title, explode=None, output_dir=None, output_file=None):
     '''
@@ -115,8 +151,7 @@ def _draw_pie_chart(sizes, labels, colours, title, explode=None, output_dir=None
     step_start = timer()
 
     # create a new figure
-    plt.figure(figsize=(8, 6))
-    plt.clf()
+    _start_plot()
 
     # plot the areas
     plt.pie(sizes, explode=explode, labels=labels, colors=colours, autopct='%1.1f%%', shadow=True, startangle=90)
@@ -124,19 +159,8 @@ def _draw_pie_chart(sizes, labels, colours, title, explode=None, output_dir=None
     # set aspect ratio to be equal so that pie is drawn as a circle.
     plt.axis('equal')
 
-    # add title
-    plt.title(title)
-
-    # scale to axes
-    plt.autoscale(tight=False)
-
-    if output_dir is None or output_file is None:
-        # display the graph
-        plt.show()
-    else:
-        # save image to output dir
-        plt.savefig(os.path.join(output_dir, output_file))
-    plt.close()
+    # complete and save/show the plot
+    _finish_plot(title, output_dir, output_file)
 
     logger.debug("%s plotted %d areas (seconds): %f", title, len(sizes), timer() - step_start)
 
@@ -313,13 +337,6 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
             sources[d] = len(dst_data)
             d += 1
 
-        # TODO: graph each Destination IP individually, with sub-plots:
-        #    * (scatter) dst port vs. Source IP
-        #    * (scatter) dst port time series plot
-        #    * (pie chart) total connections received/sent
-        #    * (pie chart) total bytes received/sent
-        #    * (bar) #connections over time (5 minute intervals?)
-        #    * (bar) bytes received over time (5 minute intervals?)
         # output IP destination graphs (if there are enough incoming connections to make it seem like we'd care...)
         recv_conns = num_connections
         if len(dst_data) > 0 and recv_conns > lower_bounds:
@@ -328,31 +345,51 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
             dst_dir = os.path.join(dst_analysis_dir, dst_str)
             os.makedirs(dst_dir, exist_ok=True)
 
+            # graph each Destination IP for:
+            #    * (scatter) dst port vs. Source IP
+            # subplots for:
+            #    * (pie chart) total connections received/sent
+            #    * (pie chart) total bytes received/sent
+            # subplots for:
+            #    * (scatter) dst port time series plot
+            #    * (bar) #connections over time (5 minute intervals?)
+            #    * (bar) bytes received over time (5 minute intervals?)
+
             # plot Destination Ports vs. Source IP (indicating protocols used)
-            _draw_scatter_graph(dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], dst_data[COL_PROTOCOL], 'Destination Port', 'Source IP', _ipv4_int_to_dotted(dst_ip), dst_dir, 'ports_and_sources.png')
+            unique_data = _get_unique_rows(dst_data, [COL_DEST_PORT, COL_SOURCE_IP, COL_PROTOCOL])
+            _draw_scatter_graph(unique_data[COL_DEST_PORT], unique_data[COL_SOURCE_IP], unique_data[COL_PROTOCOL], 'Destination Port', 'Source IP', _ipv4_int_to_dotted(dst_ip), dst_dir, 'ports_and_sources.png')
             num_graphs += 1
 
-            # time-series plot of single Destination IP (indicating Source IPs)
-            _draw_scatter_graph(dst_data[COL_TIME], dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], 'Time', 'Destination Port', _ipv4_int_to_dotted(dst_ip), dst_dir, 'ports_over_time.png')
-            num_graphs += 1
-
-            # TODO: plot received #connections over time
-            # num_graphs += 1
-
-            # TODO: plot bytes received over time
-            # num_graphs += 1
-
-            # plot Received vs. Sent connections
+            # plot total Received vs. Sent connections
             dst_rec = ips[dst_ip]
             sent_conns = dst_rec['sent_connections']
             # sizes, labels, colours, title, explode=None, output_dir=None, output_file=None
-            _draw_pie_chart([recv_conns, sent_conns], ['#Received', '#Sent'], ['red', 'green'], 'IP Connections', [0.1, 0], dst_dir, 'ip_connections.png')
+            _draw_pie_chart([recv_conns, sent_conns], ['#Received', '#Sent'], ['r', 'g'], 'IP Connections', [0.1, 0], dst_dir, 'ip_connections.png')
             num_graphs += 1
 
-            # plot Received vs. Sent bytes
+            # plot total Received vs. Sent bytes
             recv_bytes = total_bytes
             sent_bytes = dst_rec['sent_bytes']
-            _draw_pie_chart([recv_bytes, sent_bytes], ['Received', 'Sent'], ['red', 'green'], 'IP Data (Bytes)', [0.1, 0], dst_dir, 'ip_bytes.png')
+            _draw_pie_chart([recv_bytes, sent_bytes], ['Received', 'Sent'], ['r', 'g'], 'IP Data (Bytes)', [0.1, 0], dst_dir, 'ip_bytes.png')
+            num_graphs += 1
+
+            # time-series plot of single Destination IP (indicating Source IPs)
+            # unlikely there will be many duplicates when time being considered
+            _draw_scatter_graph(dst_data[COL_TIME], dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], 'Time / ms', 'Destination Port', _ipv4_int_to_dotted(dst_ip), dst_dir, 'ports_over_time.png')
+            num_graphs += 1
+
+            # plot received #connections over time (cumulative sum of connections along the time-sorted array)
+            # get the times from the packet data
+            t = np.array(dst_data[COL_TIME])
+            # create a 2S array of 1s, the same length as the number of connections (times)
+            a = np.ones([len(t), 2])
+            # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
+            a[:, 0] = t
+            _draw_line_graph(a[:, 0], np.cumsum(a, 1), 'Time/ms', '#Connections', 'Connections Received / Time', dst_dir, 'connections_over_time.png')
+            num_graphs += 1
+
+            # plot bytes received over time (cumulative sum of packet lengths along the time-sorted array)
+            _draw_line_graph(dst_data[COL_TIME], np.cumsum(dst_data[COL_LENGTH]), 'Time / ms', 'Bytes Received', 'Bytes Received / Time', dst_dir, 'bytes_over_time.png')
             num_graphs += 1
 
         num_ips += 1
