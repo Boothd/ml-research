@@ -10,7 +10,6 @@ Example:
 
 Author: chris.sampson@naimuri.com
 '''
-from datetime import datetime
 import logging.config, yaml
 import sys, getopt, os.path, struct, socket
 from timeit import default_timer as timer
@@ -42,8 +41,6 @@ COL_FLAGS = 'flags'
 '''int:    Default lower bounds limit'''
 DEFAULT_LOWER_BOUNDS = 200
 
-start = timer()
-
 # setup logging config
 logging.config.dictConfig(yaml.load(open(os.path.join('config', 'logging.yaml'))))
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
@@ -57,11 +54,12 @@ def _print_usage(exit_code=0):
     '''
     f = sys.stderr if exit_code > 0 else sys.stdout
 
-    print(__file__ + " -i <input file> [-o <output dir>] [-n <num records>] [-l <lower bounds> [-d]", file=f)
+    print(__file__ + " -i <input file> [-o <output dir>] [-n <num records>] [-l <lower bounds> [-f]", file=f)
     print("-i <input file>: CSV format data file to be parsed")
     print("-n <num records>: Number of CSV rows to read as records for input")
-    print("-i <output dir>: Directory for output of graph images (if unspecified, images will be shown but not saved)")
+    print("-o <output dir>: Directory for output of graph images (if unspecified, images will be shown but not saved)")
     print("-l <lower bounds>: Lower bounds for number of points before plotting a destination IP's incoming sources (default = 200)")
+    print("-f: output feature graphs (otherwise omitted)")
 
     sys.exit(exit_code)
 
@@ -77,10 +75,12 @@ def _ipv4_int_to_dotted(ip_address):
     '''
     return socket.inet_ntoa(struct.pack("!L", int(ip_address)))
 
-def _draw_graph(x_points, y_points, point_labels, x_title, y_title, title=None, output_dir=None, output_file=None, cmap_name='Paired'):
+def _draw_scatter_graph(x_points, y_points, point_labels, x_title, y_title, title, output_dir=None, output_file=None, cmap_name='Paired'):
     '''
     Draw a 2D graph using matplotlib and either save to output_dir or display to user
     '''
+    step_start = timer()
+
     # create a new figure
     plt.figure(figsize=(8, 6))
     plt.clf()
@@ -106,6 +106,8 @@ def _draw_graph(x_points, y_points, point_labels, x_title, y_title, title=None, 
         plt.savefig(os.path.join(output_dir, output_file))
     plt.close()
 
+    logger.debug("%s plotted (seconds): %f", title, timer() - step_start)
+
 def _plot_feature_graphs(csv_data, output_dir=None):
     '''
     Plot several 2D graphs comparing standard features of the data
@@ -116,29 +118,23 @@ def _plot_feature_graphs(csv_data, output_dir=None):
 
     # get known protocol values
     protocols = csv_data[COL_PROTOCOL]
-    logger.debug("Protocol extracted (seconds): " + str(timer() - start))
 
     # plot source/destination IPs
-    _draw_graph(csv_data[COL_SOURCE_IP], csv_data[COL_DEST_IP], protocols, 'Source IP', 'Destination IP', 'Source vs. Destination IP', output_dir, 'dest_source_ip_analysis.png')
-    logger.debug("Src/Dest IP plotted (seconds): " + str(timer() - start))
+    _draw_scatter_graph(csv_data[COL_SOURCE_IP], csv_data[COL_DEST_IP], protocols, 'Source IP', 'Destination IP', 'Source vs. Destination IP', output_dir, 'dest_source_ip_analysis.png')
 
     # plot source/destination ports
-    _draw_graph(csv_data[COL_SOURCE_PORT], csv_data[COL_DEST_PORT], protocols, 'Source Port', 'Destination Port', 'Source vs. Destination Port', output_dir, 'dest_source_port_analysis.png')
-    logger.debug("Src/Dest Port plotted (seconds): " + str(timer() - start))
+    _draw_scatter_graph(csv_data[COL_SOURCE_PORT], csv_data[COL_DEST_PORT], protocols, 'Source Port', 'Destination Port', 'Source vs. Destination Port', output_dir, 'dest_source_port_analysis.png')
 
     # plot time to live/length
-    _draw_graph(csv_data[COL_TTL], csv_data[COL_LENGTH], protocols, 'Time to Live', 'Packet Length', 'TTL vs. Packet Length', output_dir, 'length_ttl_analysis.png')
-    logger.debug("TTL/Length IP plotted (seconds): " + str(timer() - start))
+    _draw_scatter_graph(csv_data[COL_TTL], csv_data[COL_LENGTH], protocols, 'Time to Live', 'Packet Length', 'TTL vs. Packet Length', output_dir, 'length_ttl_analysis.png')
 
     # plot length/fragment
-    _draw_graph(csv_data[COL_LENGTH], csv_data[COL_FRAGMENT], protocols, 'Packet Length', 'Fragment', 'Packet Length vs. Fragment', output_dir, 'fragment_length_analysis.png')
-    logger.debug("Length/Fragment IP plotted (seconds): " + str(timer() - start))
+    _draw_scatter_graph(csv_data[COL_LENGTH], csv_data[COL_FRAGMENT], protocols, 'Packet Length', 'Fragment', 'Packet Length vs. Fragment', output_dir, 'fragment_length_analysis.png')
 
     # src port/flags
-    _draw_graph(csv_data[COL_SOURCE_PORT], csv_data[COL_FLAGS], protocols, 'Source Port', 'Flags', 'Source Port vs. TCP Flags', output_dir, 'tcpflags_source_port_analysis.png')
-    logger.debug("Src Port/Flags plotted (seconds): " + str(timer() - start))
+    _draw_scatter_graph(csv_data[COL_SOURCE_PORT], csv_data[COL_FLAGS], protocols, 'Source Port', 'Flags', 'Source Port vs. TCP Flags', output_dir, 'tcpflags_source_port_analysis.png')
 
-def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None):
+def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None, draw_feature_graphs=False):
     '''Parse PCAP data CSV file content and plot graphs of features vs. known packet type
 
     Fields expected in input:
@@ -159,8 +155,10 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None)
         lower_bounds (int): Lower bounds for number of points before plotting a destination IP's incoming sources
         output_dir (str):  Directory for saving graph images (if None, images will be displayed but not saved)
         num_records (int): Maximum number of records to read from input CSV (default: None - all lines)
+        draw_feature_graphs (boolean): Whether to draw the feature graphs for the data (default: False)
     '''
     # read CSV file into Numpy multi-dimensional arrays
+    step_start = timer()
     csv_data = np.genfromtxt(csv_file,
                             delimiter=',',
                             autostrip=True,
@@ -180,20 +178,23 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None)
                             filling_values='0',
                             invalid_raise=False,
                             max_rows=num_records)
-    logger.debug("CSV to array (seconds): " + str(timer() - start))
+    logger.debug("CSV to array (seconds): %f", timer() - step_start)
 
     # plot feature graphs from data
-    feature_graphs_dir = os.path.join(output_dir, "feature_graphs")
-    os.makedirs(feature_graphs_dir, exist_ok=True)
-    _plot_feature_graphs(csv_data, feature_graphs_dir)
-    logger.debug("Graphs plotted (seconds): " + str(timer() - start))
+    if draw_feature_graphs:
+        step_start = timer()
+        feature_graphs_dir = os.path.join(output_dir, "feature_graphs")
+        os.makedirs(feature_graphs_dir, exist_ok=True)
+        _plot_feature_graphs(csv_data, feature_graphs_dir)
+        logger.debug("Feature Graphs plotted (seconds): %f", timer() - step_start)
 
     # sort data by Destination IP and Timestamp
+    step_start = timer()
     sorted_dst_data = np.sort(csv_data, order=[COL_DEST_IP, COL_TIME])
 
     # Split data into sub-arrays based on Destination IP
     dst_ips = np.split(sorted_dst_data, np.where(np.diff(sorted_dst_data[COL_DEST_IP]))[0] + 1)
-    logger.debug("Destination IPs (seconds): " + str(timer() - start))
+    logger.debug("Destination IPs sorted and unique (seconds): %f", timer() - step_start)
 
     # track number of sources for each Destination IP if in debug mode
     if logger.isEnabledFor(logging.DEBUG):
@@ -211,6 +212,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None)
     # TODO: plot multiple graphs at the same time (multiprocessing? multi-threading?)
 
     # iterate through collections of Destination IP data and output analysis (if applicable)
+    step_start = timer()
     ips = {}
     for dst_data in dst_ips:
         # determine current Destination IP and number of connection records
@@ -230,12 +232,12 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None)
             # plot Destination Ports vs. Source IP (indicating protocols used)
             dst_src_graphs_dir = os.path.join(output_dir, "dst_src_graphs")
             os.makedirs(dst_src_graphs_dir, exist_ok=True)
-            _draw_graph(dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], dst_data[COL_PROTOCOL], 'Destination Port', 'Source IP', _ipv4_int_to_dotted(dst_ip), dst_src_graphs_dir, _ipv4_int_to_dotted(dst_ip) + '_destination_ports_and_source_ips.png')
+            _draw_scatter_graph(dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], dst_data[COL_PROTOCOL], 'Destination Port', 'Source IP', _ipv4_int_to_dotted(dst_ip), dst_src_graphs_dir, _ipv4_int_to_dotted(dst_ip) + '_destination_ports_and_source_ips.png')
 
-            # timeline plot of single Destination IP
+            # time-series plot of single Destination IP
             dst_time_graphs_dir = os.path.join(output_dir, "dst_time_graphs")
             os.makedirs(dst_time_graphs_dir, exist_ok=True)
-            _draw_graph(dst_data[COL_TIME], dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], 'Time', 'Destination Port', _ipv4_int_to_dotted(dst_ip), dst_time_graphs_dir, _ipv4_int_to_dotted(dst_ip) + '_time_and_destination_ports.png')
+            _draw_scatter_graph(dst_data[COL_TIME], dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], 'Time', 'Destination Port', _ipv4_int_to_dotted(dst_ip), dst_time_graphs_dir, _ipv4_int_to_dotted(dst_ip) + '_time_and_destination_ports.png')
 
         # debug output of the source characteristics for all destinations
         if logger.isEnabledFor(logging.DEBUG):
@@ -243,11 +245,12 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None)
             d += 1
 
     if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("Num: " + str(len(sources)) + ", Min: " + str(min(sources)) + ", Max: " + str(max(sources)) + ", Avg: " + str(sum(sources) / len(sources)))
+        logger.debug("Num: %d, , Min: %d, Max: %d, Avg: %f", len(sources), min(sources), max(sources), sum(sources) / len(sources))
         sources = None
-        logger.debug("Destination Graphs (seconds): " + str(timer() - start))
+        logger.debug("Destination Graphs (seconds): %f", timer() - step_start)
 
     # obtain "sent" details for each IP
+    step_start = timer()
     sorted_src_data = np.sort(csv_data, order=[COL_SOURCE_IP, COL_TIME])
     src_ips = np.split(sorted_src_data, np.where(np.diff(sorted_src_data[COL_SOURCE_IP]))[0] + 1)
     for src_data in src_ips:
@@ -273,9 +276,9 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None)
         # TODO: "bowtie" plot each IP's incoming/outgoing data/connections *** pie charts??
         recv_sent_data_graphs_dir = os.path.join(output_dir, "recv_sent_graphs")
         os.makedirs(recv_sent_data_graphs_dir, exist_ok=True)
-#         _draw_graph([ips[ip]["bytes_received"]], [ips[ip]["bytes_sent"]], [ip], 'Bytes Received', 'Bytes Sent', _ipv4_int_to_dotted(ip), recv_sent_data_graphs_dir, _ipv4_int_to_dotted(ip) + '_bytes_received_and_sent.png')
+#         _draw_scatter_graph([ips[ip]["bytes_received"]], [ips[ip]["bytes_sent"]], [ip], 'Bytes Received', 'Bytes Sent', _ipv4_int_to_dotted(ip), recv_sent_data_graphs_dir, _ipv4_int_to_dotted(ip) + '_bytes_received_and_sent.png')
 
-    logger.debug("IP Details (seconds): " + str(timer() - start))
+    logger.debug("IP Details (seconds): %f", timer() - step_start)
 
 def main(argv):
     '''Parse input args and run the PCAP data CSV parser on specified inputfile (-i)
@@ -284,64 +287,69 @@ def main(argv):
         argv (list):    List of command line arguments
 
     '''
-    logger.info("Start: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
-    start = timer()
-
     inputfile = ''
     outputdir = None
     num_records = None
     lower_bounds = DEFAULT_LOWER_BOUNDS
+    draw_feature_graphs = False
 
     try:
-        opts, _ = getopt.getopt(argv, "hi:o:n:l:")
+        opts, _ = getopt.getopt(argv, "hfi:o:n:l:")
     except getopt.GetoptError:
         _print_usage(1)
 
     for opt, arg in opts:
         if opt == '-h':
             _print_usage(0)
+        elif opt == '-f':
+            draw_feature_graphs = True
         elif opt == '-i':
             inputfile = arg
             if not os.path.isfile(inputfile):
-                logger.error("Invalid inputfile (-i), file does not exist")
+                logger.error("Invalid input file (-i), file does not exist (%s)", inputfile)
                 sys.exit(2)
         elif opt == '-o':
             outputdir = arg
             if not os.path.isdir(outputdir):
-                logger.error("Invalid outputdir (-o), directory does not exist")
-                sys.exit(2)
+                logger.info("Output directory (-o) does not exist (%s), creating", outputdir)
+                try:
+                    os.makedirs(outputdir)
+                except OSError:
+                    logger.error("Could not create output directory (-o) (%s)", outputdir)
+                    sys.exit(2)
         elif opt == '-n':
             try:
                 num_records = int(arg)
                 if num_records < 1:
-                    logger.error("Number of records (-n) must be greater than 0")
+                    logger.error("Number of records (-n) must be greater than 0, got (%d)", num_records)
                     sys.exit(3)
             except Exception:
-                logger.error("Unable to parse number of records (-n), must be numeric")
+                logger.error("Unable to parse number of records (-n), must be numeric, got (%s)", num_records)
                 sys.exit(4)
         elif opt == '-l':
             try:
                 lower_bounds = int(arg)
                 if lower_bounds < 1:
-                    logger.error("Lower bounds (-l) must be greater than 0")
+                    logger.error("Lower bounds (-l) must be greater than 0, got (%d)", num_records)
                     sys.exit(5)
             except Exception:
-                logger.error("Unable to parse lower bounds (-l), must be numeric")
+                logger.error("Unable to parse lower bounds (-l), must be numeric, got (%s)", num_records)
                 sys.exit(6)
 
-    logger.info('Input file is: ' + inputfile)
+    logger.info('Input file: %s', inputfile)
+    logger.info('Draw feature graphs? %s', draw_feature_graphs)
     if not outputdir is None:
-        logger.info('Output directory is: ' + outputdir)
+        logger.info('Output directory: %s', outputdir)
     if not num_records is None:
-        logger.info('Number of records is: ' + str(num_records))
+        logger.info('Record limit: %d', num_records)
     if not lower_bounds is None:
-        logger.info('Lower bounds is: ' + str(lower_bounds))
+        logger.info('Lower bounds: %d', lower_bounds)
 
-    plot_csv_features(inputfile, lower_bounds, outputdir, num_records)
+    start = timer()
+    plot_csv_features(inputfile, lower_bounds, outputdir, num_records, draw_feature_graphs)
 
     end = timer()
-    logger.info("End: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
-    logger.info("Execution time (seconds):" + str(end - start))
+    logger.info("Execution time (seconds): %f", end - start)
 
 
 if __name__ == "__main__":

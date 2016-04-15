@@ -201,7 +201,7 @@ def main(argv):
 	parse_pcap_ipv4(inputfile, num_records)
 
 	end = timer()
-	logger.info("Time Taken (seconds): %d", end - start)
+	logger.info("Time Taken (seconds): %f", end - start)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
