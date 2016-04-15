@@ -10,19 +10,15 @@ Example:
 
 Author: chris.sampson@naimuri.com
 '''
-'''int:    Bits representing TCP Flags'''
-# FLAG_FIN = 1
-
 import logging.config, yaml
 import sys, getopt, os.path, struct, socket
 from timeit import default_timer as timer
 
-import matplotlib
-
 import matplotlib.pyplot as plt
 import numpy as np
 
-
+'''int:    Bits representing TCP Flags'''
+# FLAG_FIN = 1
 FLAG_SYN = 2
 # FLAG_RST = 4
 # FLAG_PSH = 8
@@ -133,7 +129,7 @@ def _draw_line_graph(x_points, y_points, x_title, y_title, title, output_dir=Non
     _start_plot()
 
     # plot the points
-    plt.plot(x_points, y_points, linestyle='-', markers='o', color='r')
+    plt.plot(x_points, y_points, linestyle='-', marker='o', color='r')
 
     # add axis labels
     plt.xlabel(x_title)
@@ -385,8 +381,19 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
             a = np.ones([len(t), 2])
             # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
             a[:, 0] = t
-            _draw_line_graph(a[:, 0], np.cumsum(a, 1), 'Time/ms', '#Connections', 'Connections Received / Time', dst_dir, 'connections_over_time.png')
+            _draw_line_graph(a[:, 0], np.cumsum(a[:, 1]), 'Time/ms', '#Connections', 'Connections Received / Time', dst_dir, 'connections_over_time.png')
             num_graphs += 1
+
+            # get the times from the packet data
+            syn_connections = dst_data[np.where(dst_data[COL_FLAGS] & FLAG_SYN == FLAG_SYN)]
+            if len(syn_connections) > 0:
+                t = np.array(syn_connections[COL_TIME])
+                # create a 2S array of 1s, the same length as the number of connections (times)
+                a = np.ones([len(t), 2])
+                # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
+                a[:, 0] = t
+                _draw_line_graph(a[:, 0], np.cumsum(a[:, 1]), 'Time/ms', '#Connections', 'SYN Connections Received / Time', dst_dir, 'syn_connections_over_time.png')
+                num_graphs += 1
 
             # plot bytes received over time (cumulative sum of packet lengths along the time-sorted array)
             _draw_line_graph(dst_data[COL_TIME], np.cumsum(dst_data[COL_LENGTH]), 'Time / ms', 'Bytes Received', 'Bytes Received / Time', dst_dir, 'bytes_over_time.png')
