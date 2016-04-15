@@ -12,10 +12,8 @@ Author: chris.sampson@naimuri.com
 '''
 from datetime import datetime
 import logging.config, yaml
-from pprint import pprint
-import sys, getopt, os.path, struct, socket
+import sys, getopt, os.path, struct, socket, pprint
 from timeit import default_timer as timer
-
 
 # import scapy library, ignoring IPv6 warnings (as we're only interested in IPv4 for this script)
 scapy_rt_logger = logging.getLogger("scapy.runtime")
@@ -95,12 +93,16 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS):
 
 	'''
 	protocols = {}
-	record_index = 1
+	input_index = 1
+	output_index = 1
 
 	# parse the pcap file, one packet at a time
 	with PcapReader(pcap_file) as pcap_reader:
 		for pkt in pcap_reader:
-			# check the packet contains IP (v4) details
+			# count number of PCAP records read from file
+			input_index += 1
+
+			# check the packet contains IP (v4) details and is using one of the wanted protocols
 			if 'IP' in pkt and pkt['IP'].version == 4 and pkt['IP'].proto in (1, 6, 17):
 				try:
 					# extract time, source IP, destination IP, source port, destination port, time to live, length, fragment, protocol
@@ -115,7 +117,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS):
 
 						logger.debug(','.join(
 									(
-										str(record_index),
+										str(output_index),
 										ipproto_name,
 										datetime.utcfromtimestamp(t).strftime('%d/%m/%Y %H:%M:%S.%f'),
 										src,
@@ -132,7 +134,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS):
 					# print decimalised field format
 					print(','.join(
 									(
-										str(record_index),
+										str(output_index),
 										str(ipproto),
 										str(t),
 										str(ipv4_to_int(src)),
@@ -144,18 +146,20 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS):
 							)
 
 					# stop parsing if reached requested limit
-					if num_records != DEFAULT_NUM_RECORDS and record_index >= num_records:
+					if num_records != DEFAULT_NUM_RECORDS and output_index >= num_records:
 						break
 
-					record_index += 1
-					if logger.isEnabledFor(logging.DEBUG) and record_index % 100000 == 0:
-						logger.debug(str(record_index) + ": " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
+					output_index += 1
+					if logger.isEnabledFor(logging.DEBUG) and output_index % 100000 == 0:
+						logger.debug(str(output_index) + ": " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
 				except AttributeError as ae:
-					logger.warn(str(record_index) + ": " + str(ae))
+					logger.warn(str(output_index) + ": " + str(ae))
 					pass
 
+	# log summaries of records processes
+	logger.info("Processed %d PCAP records to %d CSV records", input_index, output_index)
 	if logger.isEnabledFor(logging.DEBUG) and len(protocols) > 0:
-		pprint(protocols)
+		logger.debug("Protocols in output: %s", pprint.pformat(protocols))
 
 def main(argv):
 	'''Parse input args and run the PCAP parser on specified inputfile (-i)
@@ -164,9 +168,6 @@ def main(argv):
 		argv (list):	List of command line arguments
 
 	'''
-	logger.info("Start: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
-	start = timer()
-
 	inputfile = ''
 	num_records = DEFAULT_NUM_RECORDS
 
@@ -181,26 +182,26 @@ def main(argv):
 		elif opt == '-i':
 			inputfile = arg
 			if not os.path.isfile(inputfile):
-				logger.error("Invalid inputfile (-i), file does not exist")
+				logger.error("Invalid input file (-i), file (%s) does not exist", inputfile)
 				sys.exit(2)
 		elif opt == '-n':
 			try:
 				num_records = int(arg)
 				if num_records < 1:
-					logger.error("Number of records (-n) must be greater than 0")
+					logger.error("Number of records (-n) must be greater than 0, got %d", num_records)
 					sys.exit(3)
 			except Exception:
-				logger.error("Unable to parse number of records (-n), must be numeric")
+				logger.error("Unable to parse number of records (-n), must be numeric, got %s", num_records)
 				sys.exit(4)
 
-	logger.info('Input file is: ' + inputfile)
-	logger.info('Number of records is: : ' + str(num_records))
+	start = timer()
+	logger.info('Input file: %s', inputfile)
+	logger.info('Record limit: %d', num_records)
 
 	parse_pcap_ipv4(inputfile, num_records)
 
 	end = timer()
-	logger.info("End: " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
-	logger.info("Time Taken (seconds): " + str(end - start))
+	logger.info("Time Taken (seconds): %d", end - start)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
