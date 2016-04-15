@@ -320,14 +320,14 @@ def plot_csv_features(csv_file, lower_bounds, output_dir=None, num_records=None,
         #    * (pie chart) total bytes received/sent
         #    * (bar) #connections over time (5 minute intervals?)
         #    * (bar) bytes received over time (5 minute intervals?)
-        # create directory for Destination IP's graphs
-        dst_str = _ipv4_int_to_dotted(int(dst_ip))
-        dst_dir = os.path.join(dst_analysis_dir, dst_str)
-        os.makedirs(dst_dir, exist_ok=True)
-
         # output IP destination graphs (if there are enough incoming connections to make it seem like we'd care...)
         recv_conns = num_connections
         if len(dst_data) > 0 and recv_conns > lower_bounds:
+            # create directory for Destination IP's graphs
+            dst_str = _ipv4_int_to_dotted(int(dst_ip))
+            dst_dir = os.path.join(dst_analysis_dir, dst_str)
+            os.makedirs(dst_dir, exist_ok=True)
+
             # plot Destination Ports vs. Source IP (indicating protocols used)
             _draw_scatter_graph(dst_data[COL_DEST_PORT], dst_data[COL_SOURCE_IP], dst_data[COL_PROTOCOL], 'Destination Port', 'Source IP', _ipv4_int_to_dotted(dst_ip), dst_dir, 'ports_and_sources.png')
             num_graphs += 1
