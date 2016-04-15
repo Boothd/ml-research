@@ -140,7 +140,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS):
 										str(ipv4_to_int(src)),
 										str(ipv4_to_int(dst)),
 										# flags = 0 if no TCP layer present
-										pkt.sprintf("%sport%,%dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%r,TCP.flags%}")
+										pkt.sprintf("%r,sport%,%r,dport%,%IP.ttl%,%IP.len%,%IP.frag%,{TCP:%r,TCP.flags%}")
 									)
 								)
 							)
@@ -153,7 +153,7 @@ def parse_pcap_ipv4(pcap_file, num_records=DEFAULT_NUM_RECORDS):
 					if logger.isEnabledFor(logging.DEBUG) and output_index % 100000 == 0:
 						logger.debug(str(output_index) + ": " + datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'))
 				except AttributeError as ae:
-					logger.warn(str(output_index) + ": " + str(ae))
+					logger.warn("Problem parsing record %d, skipping: %s", output_index, ae)
 					pass
 
 	# log summaries of records processes
@@ -190,8 +190,8 @@ def main(argv):
 				if num_records < 1:
 					logger.error("Number of records (-n) must be greater than 0, got %d", num_records)
 					sys.exit(3)
-			except Exception:
-				logger.error("Unable to parse number of records (-n), must be numeric, got %s", num_records)
+			except:
+				logger.exception("Unable to parse number of records (-n), must be numeric, got %s", num_records)
 				sys.exit(4)
 
 	start = timer()
@@ -204,4 +204,8 @@ def main(argv):
 	logger.info("Time Taken (seconds): %f", end - start)
 
 if __name__ == "__main__":
-	main(sys.argv[1:])
+	try:
+		main(sys.argv[1:])
+	except:
+		logger.exception('Problem executing program')
+		raise
