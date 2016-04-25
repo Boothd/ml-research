@@ -528,7 +528,7 @@ def main(argv):
                     logger.error("Number of records (-n) must be greater than 0, got (%d)", num_records)
                     sys.exit(3)
             except:
-                logger.exception("Unable to parse number of records (-n), must be numeric, got (%s)", num_records)
+                logger.exception("Unable to parse number of records (-n), must be numeric, got (%s)", arg)
                 sys.exit(4)
         elif opt == '-l':
             try:
@@ -537,16 +537,16 @@ def main(argv):
                     logger.error("Lower bounds (-l) must be greater than 0, got (%d)", lower_bounds)
                     sys.exit(5)
             except:
-                logger.exception("Unable to parse lower bounds (-l), must be numeric, got (%s)", lower_bounds)
+                logger.exception("Unable to parse lower bounds (-l), must be numeric, got (%s)", arg)
                 sys.exit(6)
         elif opt == '-d':
             try:
-                destination_ip = int(arg)
+                destination_ip = long(arg)
                 if destination_ip < 1:
                     logger.error("Destination IP (-d) must be greater than 0, got (%d)", destination_ip)
                     sys.exit(7)
             except:
-                logger.exception("Unable to parse Destination IP (-d), must be numeric, got (%s)", destination_ip)
+                logger.exception("Unable to parse Destination IP (-d), must be numeric, got (%s)", arg)
                 sys.exit(8)
 
     logger.info('Input file: %s', inputfile)
