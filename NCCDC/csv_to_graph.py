@@ -238,9 +238,9 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                             invalid_raise=False,
                             max_rows=num_records)
 
-    if csv_data is None:
-        logger.debug("CSV to array (%d) (seconds): %f", 0, timer() - step_start)
-    else :
+    if csv_data is None or not isinstance(csv_data, np.ndarray):
+        logger.debug("CSV to array - 0 records or parsing failed (seconds): %f", timer() - step_start)
+    else:
         logger.debug("CSV to array (%d) (seconds): %f", len(csv_data), timer() - step_start)
 
         # plot feature graphs from data
