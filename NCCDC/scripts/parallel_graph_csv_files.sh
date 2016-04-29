@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_DIR=`dirname "$(readlink -f "$0")"`
+SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 CSV_DIR=$1
 OUTPUT_DIR=$2

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_DIR=`dirname "$(readlink -f "$0")"`
+SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 DATA_DIR=$1
 OUTPUT_DIR=$2
@@ -28,4 +28,3 @@ then
 fi
 
 parallel --no-notice --eta --progress "python ${SCRIPT_DIR}/../pcap_to_csv.py -i {} > ${OUTPUT_DIR}/{/.}.csv" ::: `ls ${DATA_DIR}/*.gz`
-
