@@ -118,8 +118,8 @@ def _draw_scatter_graph(x_points, y_points, point_labels, x_title, y_title, titl
     plt.scatter(x_points, y_points, c=point_labels, cmap=plt.cm.get_cmap(cmap_name))
 
     # add axis labels
-    plt.xlabel(x_title)
-    plt.ylabel(y_title)
+    plt.xlabel(x_title).set_fontsize('x-small')
+    plt.ylabel(y_title).set_fontsize('x-small')
 
     # complete and save/show the plot
     _finish_plot(title, output_dir, output_file)
@@ -382,7 +382,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     f, (pie_conns, pie_bytes) = plt.subplots(2)
 
                     # set figure title and x-axis
-                    pie_conns.set_title(dst_str + " - Connection Summary")
+                    f.suptitle(dst_str + " - Connection Summary")
 
                     # plot total Received vs. Sent connections
                     dst_rec = ips[dst_ip]
@@ -408,16 +408,17 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     # create time-series graphs as subplots in a single figure
                     plt.clf()
                     f, (dst_ports, conn_flags, conn_types, brecv) = plt.subplots(4, sharex=True)
-                    f = f  # get rid of eclipse "unused" warning
 
                     # set figure title and x-axis
-                    dst_ports.set_title(dst_str + " - Time Series Analysis")
-                    brecv.set_xlabel('Time / ms')
+                    f.suptitle(dst_str + " - Time Series Analysis")
+                    brecv.set_xlabel('Time / ms').set_fontsize('x-small')
 
                     # time-series plot of single Destination IP (indicating Source IPs)
                     # unlikely there will be many duplicates when time being considered
                     dst_ports.scatter(dst_data[COL_TIME], dst_data[COL_DEST_PORT], marker=".", c=dst_data[COL_SOURCE_IP], cmap=plt.cm.get_cmap('Paired'))
-                    dst_ports.set_ylabel('Port')
+                    dst_ports.set_ylabel('Port').set_fontsize('x-small')
+                    box = dst_ports.get_position()
+                    dst_ports.set_position([box.x0, box.y0, box.width * 0.9, box.height])
                     num_graphs += 1
 
 
@@ -431,7 +432,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     conn_flags.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', color='y', label="All (" + str(len(conn_times)) + ")")
                     conn_times = None
                     conn_time_counts = None
-                    conn_flags.set_ylabel("# by Flag")
+                    conn_flags.set_ylabel("# by Flag").set_fontsize('x-small')
 
                     # SYN not ACK
                     syn_connections = dst_data[(dst_data[COL_FLAGS] & FLAG_SYN == FLAG_SYN) & (dst_data[COL_FLAGS] & FLAG_ACK != FLAG_ACK)]
@@ -476,12 +477,14 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                         synack_time_counts = None
 
                     # add legend for the different types of flags in the connections
-                    conn_flags.legend(loc=2)
+                    box = conn_flags.get_position()
+                    conn_flags.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+                    conn_flags.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize='x-small')
                     num_graphs += 1
 
 
                     # plot received #connections over time (cumulative sum of connections along the time-sorted array)
-                    conn_types.set_ylabel("# by Type")
+                    conn_types.set_ylabel("# by Type").set_fontsize('x-small')
 
                     # TCP
                     tcp_connections = dst_data[dst_data[COL_PROTOCOL] == TYPE_TCP]
@@ -529,13 +532,17 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                         udp_time_counts = None
 
                     # add legend for the different types of flags in the connections
-                    conn_types.legend(loc=2)
+                    box = conn_types.get_position()
+                    conn_types.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+                    conn_types.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize='x-small')
                     num_graphs += 1
 
 
                     # plot bytes received over time (cumulative sum of packet lengths along the time-sorted array)
                     brecv.plot(dst_data[COL_TIME], np.cumsum(dst_data[COL_LENGTH]), linestyle='-', color='b')
-                    brecv.set_ylabel("Bytes")
+                    brecv.set_ylabel("Bytes").set_fontsize('x-small')
+                    box = brecv.get_position()
+                    brecv.set_position([box.x0, box.y0, box.width * 0.9, box.height])
                     num_graphs += 1
 
                     # scale & save image to output dir
@@ -566,27 +573,26 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     dst_src_ips = None
                     if len(dst_srcs) > 0:
                         f, (src_conns, src_bytes) = plt.subplots(2, sharex=True)
-                        f = f  # get rid of eclipse "unused" warning
 
                         # set image title
-                        src_conns.set_title(dst_str + " - Source Summary")
+                        f.suptitle(dst_str + " - Source Summary")
 
                         # x locations for the groups
                         ind = np.arange(len(dst_srcs))
 
                         # plot #connections from Source
-                        src_conns.bar(ind, dst_srcs[:, 1], color='r')
-                        src_conns.set_ylabel("#Connections")
+                        src_conns.bar(ind, dst_srcs[:, 1], color='r', align='center')
+                        src_conns.set_ylabel("#Connections").set_fontsize('x-small')
 
                         # plot #bytes from Source
-                        src_bytes.bar(ind, dst_srcs[:, 2], color='y')
-                        src_bytes.set_ylabel("#Bytes")
+                        src_bytes.bar(ind, dst_srcs[:, 2], color='y', align='center')
+                        src_bytes.set_ylabel("#Bytes").set_fontsize('x-small')
 
                         # set x-axis labels
                         src_bytes.set_xticks(ind)
-                        src_bytes.set_xticklabels(dst_srcs[:, 0])
-                        f.subplots_adjust(bottom=0.25)  # increase space for labels and rotate to make readable
-                        plt.setp(src_bytes.get_xticklabels(), rotation=90)
+                        src_bytes.set_xticklabels(dst_srcs[:, 0], fontsize='x-small')
+                        f.subplots_adjust(bottom=0.25)  # increase space for labels
+                        plt.setp(src_bytes.get_xticklabels(), rotation=90)  # rotate labels to make readable
 
                         num_graphs += 1
 
