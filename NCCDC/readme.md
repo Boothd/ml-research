@@ -29,11 +29,20 @@ Machine Learning libraries being tested:
 
 Other python libraries being used in this project:
 	<ul>
-		<li>[scapy] [4] (or [scapy3] [5] for python 3)</li>
+		<li>[scapy] [4] or [scapy3] [5] for python 3</li>
 	</ul>
 
 	[4]: http://www.secdev.org/projects/scapy/
 	[5]: https://phaethon.github.io/scapy/api/installation.html
+
+## Linux Utilities
+
+Linux utilities (non-standard) being used in this project:
+	<ul>
+		<li>[GNU Parallel] [6]</li>
+	</ul>
+
+	[6]: http://www.gnu.org/s/parallel
 
 # Usage
 
@@ -82,7 +91,15 @@ Fields included in output:
 
 ## Graph Packet features
 
-Parse CSV packet file (in output format from PCAP parser) and produce graphs:
+Parse CSV packet file (in output format from PCAP parser) and produce graphs, run the csv_to_graph.py script specifying the input PCAP file:
+
+	$ python csv_to_graph.py -i data/2015/dayone.csv -o analysis/2015/dayone -f
+
+See `csv_to_graph.py -h` for more usage details.
+
+### Feature Graphs
+
+Optionally produce feature graphs over the entire dataset:
 
 <ul>
 	<li>By Packet Type:
@@ -91,6 +108,47 @@ Parse CSV packet file (in output format from PCAP parser) and produce graphs:
 			<li>Source Port vs. Destination Port</li>
 			<li>Packet Length vs. Fragment</li>
 			<li>Packet Length vs. Time to Live</li>
+			<li>Source Port vs. TCP Flags</li>
 		</ul>
 	</li>
 </ul>
+
+### Destination Address Analysis Graphs
+
+For each Destination IP, produce graphs:
+
+<ul>
+	<li>Destination Port vs. Source IP</li>
+	<li>Connection summary:
+		<ul>
+			<li>#Connections received/sent</li>
+            <li>#Bytes received/sent</li>
+        </ul>
+    </li>
+	<li>Time-series plot:
+		<ul>
+        	<li>Destination Port connections</li>
+            <li>#Connections (cumulative sum)
+            	<ul>
+            		<li>#SYN (no ACK) connections</li>
+            		<li>#ACK (no SYN) connections</li>
+            		<li>#SYN-ACK connections</li>
+            	</ul>
+            </li>
+            <li>#Bytes received (cumulative sum)</li>
+        </ul>
+    </li>
+</ul>
+
+## Parallel Processing
+
+Several scripts exist to help speed-up parsing and analysis of large datasets (consisting of multiple files) on multi-core systems:
+
+<dl>
+	<dt>parallel_convert_pcap_files.sh</dt><dd>Convert a directory of PCAP files in parallel, outputting one CSV file per input<br>
+	Input args: DATA_DIR, CSV_DIR</dd>
+	<dt>parallel_split_csv_files_by_dst_ip.sh</dt><dd>Identify unique list of Destination IPs in one or more CSV files and produce one CSV per Destination IP (i.e. "conversationalise" traffic to/from individual Destination IPs), using the IP address as filename<br>
+	Input args: CSV_DIR, IP_CSV_DIR</dd>
+	<dt>parallel_graph_csv_files.sh</dt><dd>Graph multiple IP conversation CSV files, filtering output by Destination IP identified by the filename<br>
+	Input args: IP_CSV_DIR, GRAPH_DIR</dd>
+</dl>

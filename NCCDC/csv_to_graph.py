@@ -119,39 +119,6 @@ def _draw_scatter_graph(x_points, y_points, point_labels, x_title, y_title, titl
     # complete and save/show the plot
     _finish_plot(title, output_dir, output_file)
 
-# def _draw_line_graph(x_points, y_points, x_title, y_title, title, output_dir=None, output_file=None):
-#     '''
-#     Draw a 2D line graph using matplotlib and either save to output_dir or display to user
-#     '''
-#     # create a new figure
-#     _start_plot()
-#
-#     # plot the points
-#     plt.plot(x_points, y_points, linestyle='-', marker='o', color='r')
-#
-#     # add axis labels
-#     plt.xlabel(x_title)
-#     plt.ylabel(y_title)
-#
-#     # complete and save/show the plot
-#     _finish_plot(title, output_dir, output_file)
-#
-# def _draw_pie_chart(sizes, labels, colours, title, explode=None, output_dir=None, output_file=None):
-#     '''
-#     Draw a 2D pie chart using matplotlib and either save to output_dir or display to user
-#     '''
-#     # create a new figure
-#     _start_plot()
-#
-#     # plot the areas
-#     plt.pie(sizes, explode=explode, labels=labels, colors=colours, autopct='%1.1f%%', shadow=True, startangle=90)
-#
-#     # set aspect ratio to be equal so that pie is drawn as a circle.
-#     plt.axis('equal')
-#
-#     # complete and save/show the plot
-#     _finish_plot(title, output_dir, output_file)
-
 def _get_unique_rows(data_arr, fields_arr):
     '''
     Extract unique rows of data from array based on a set of fields
@@ -304,7 +271,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                 logger.debug("Ignoring Source data for IP %s due to filter", src_ip)
 
     if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("Source Destinations - Num: %d, , Min: %d, Max: %d, Avg: %f", len(dests), min(dests), max(dests), sum(dests) / len(dests))
+        logger.debug("Source Destinations - Num: %d, Min: %d, Max: %d, Avg: %f", len(dests), min(dests), max(dests), sum(dests) / len(dests))
         dests = None
 
     # iterate through collections of Destination IP and record details for IP as a receiver
@@ -497,7 +464,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
         for ip, rec in debug_ips.items():
             logger.debug("Destination statistics: IP=%s, %s", _ipv4_int_to_dotted(ip), {k:v for k, v in rec.items() if k.startswith('received_') or k.startswith('sent_')})
         logger.debug("IP analysis (%d), graphs (%d) (seconds): %f", num_ips, num_graphs, timer() - step_start)
-        logger.debug("Destination Sources - Num: %d, , Min: %d, Max: %d, Avg: %f", len(sources), min(sources), max(sources), sum(sources) / len(sources))
+        logger.debug("Destination Sources - Num: %d, Min: %d, Max: %d, Avg: %f", len(sources), min(sources), max(sources), sum(sources) / len(sources))
         sources = None
 
 def main(argv):
