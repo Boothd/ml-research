@@ -28,6 +28,11 @@ FLAG_ACK = 16
 
 FLAG_SYNACK = FLAG_SYN + FLAG_ACK
 
+'''int:    Connection type'''
+TYPE_ICMP = 1
+TYPE_TCP = 6
+TYPE_UDP = 17
+
 '''string:    Column names used to access array data from ingested CSV'''
 COL_ROWNUM = 'rownum'
 COL_PROTOCOL = 'protocol'
@@ -207,13 +212,13 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
 
     # check that we've got a usable array
     if csv_data is None or not isinstance(csv_data, np.ndarray):
-        logger.info("CSV (%s) to array (0 records or parsing failed) (seconds): %f", csv_file, timer() - step_start)
+        logger.error("CSV (%s) to array (0 records or parsing failed) (seconds): %f", csv_file, timer() - step_start)
         return
 
     # stop if there's not enough data in the array to care about
     try:
         if len(csv_data) < lower_bounds:
-            logger.info("CSV (%s) to array (%d records), insufficient records for analysis (%d) (seconds): %f", csv_file, len(csv_data), lower_bounds, timer() - step_start)
+            logger.warn("CSV (%s) to array (%d records), insufficient records for analysis (%d) (seconds): %f", csv_file, len(csv_data), lower_bounds, timer() - step_start)
             return
     except TypeError:
         logger.exception("Unable to confirm length of imported CSV array (%s)", type(csv_data))
@@ -258,9 +263,13 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                 # log sent data stats for the IP
                 ips[src_ip] = dict(received_bytes=0,
                                     received_connections=0,
+                                    received_earliest=0,
+                                    received_latest=0,
                                     dst_details=list(),
                                     sent_bytes=np.sum(src_data[COL_LENGTH]),
                                     sent_connections=num_connections,
+                                    sent_earliest=src_data[0][COL_TIME],
+                                    sent_latest=src_data[-1][COL_TIME],
                                     src_details=src_data)
 
                 # debug output of the destination characteristics for all sources
@@ -270,6 +279,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
             else:
                 logger.debug("Ignoring Source data for IP %s due to filter", src_ip)
 
+    src_ips = None
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("Source Destinations - Num: %d, Min: %d, Max: %d, Avg: %f", len(dests), min(dests), max(dests), sum(dests) / len(dests))
         dests = None
@@ -307,9 +317,13 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                 if not dst_ip in ips:
                     ip_rec = dict(received_bytes=total_bytes,
                                         received_connections=num_connections,
+                                        received_earliest=dst_data[0][COL_TIME],
+                                        received_latest=dst_data[-1][COL_TIME],
                                         dst_details=dst_data,
                                         sent_bytes=0,
                                         sent_connections=0,
+                                        sent_earliest=0,
+                                        sent_latest=0,
                                         src_details=list())
                     ips[dst_ip] = ip_rec
                 else:
@@ -318,13 +332,13 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     ip_rec["received_connections"] = num_connections
                     ip_rec["src_details"] = list()
                     ip_rec["dst_details"] = dst_data
+                    ip_rec['received_earliest'] = dst_data[0][COL_TIME]
+                    ip_rec['received_latest'] = dst_data[-1][COL_TIME]
 
                 # debug output of the source characteristics and times for all destinations
                 if logger.isEnabledFor(logging.DEBUG):
                     sources[d] = len(dst_data)
                     d += 1
-                    ip_rec['received_earliest'] = dst_data[0][COL_TIME]
-                    ip_rec['received_latest'] = dst_data[-1][COL_TIME]
 
                 # output IP destination graphs (if there are enough incoming connections to make it seem like we'd care...)
                 recv_conns = num_connections
@@ -335,23 +349,31 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     os.makedirs(dst_dir, exist_ok=True)
 
                     # graph each Destination IP for:
-                    #    * (scatter) dst port vs. Source IP
-                    # subplots for:
-                    #    * (pie chart) total connections received/sent
-                    #    * (pie chart) total bytes received/sent
-                    # subplots for:
-                    #    * (scatter) dst port time series plot
-                    #    * (line) #connections over time
-                    #    * (line) #SYN connections over time
-                    #    * (line) #ACK connections over time
-                    #    * (line) #SYN-ACK connections over time
-                    #    * (line) bytes received over time
+                    #    * (scatter) Destination Port vs. Source IP
+                    # Connection summary subplots for:
+                    #    * (pie) #connections received/sent
+                    #    * (pie) #bytes received/sent
+                    # Time-series subplots for:
+                    #    * (scatter) Destination Port connections
+                    #    * (line) #connections (with Flags)
+                    #        * (line) #SYN connections
+                    #        * (line) #ACK connections
+                    #        * (line) #SYN-ACK connections
+                    #    * (line) #connections (by Type)
+                    #        * (line) #TCP connections
+                    #        * (line) #ICMP connections
+                    #        * (line) #UDP connections
+                    #    * (line) #bytes received
+                    # Source summary subplots for:
+                    #    * (bar) #connections (from Source IP)
+                    #    * (bar) #bytes (from Source IP)
 
                     # plot Destination Ports vs. Source IP (indicating protocols used)
                     # get unique points for plotting only (performance)
                     unique_data = _get_unique_rows(dst_data, [COL_DEST_PORT, COL_SOURCE_IP, COL_PROTOCOL])
                     _draw_scatter_graph(unique_data[COL_DEST_PORT], unique_data[COL_SOURCE_IP], unique_data[COL_PROTOCOL], 'Destination Port', 'Source IP', _ipv4_int_to_dotted(dst_ip), dst_dir, 'ports_and_sources.png')
                     num_graphs += 1
+
 
                     # create pie-chart subplots
                     plt.clf()
@@ -380,9 +402,10 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     plt.savefig(os.path.join(dst_dir, 'connections_summary.png'))
                     plt.close()
 
+
                     # create time-series graphs as subplots in a single figure
                     plt.clf()
-                    f, (dst_ports, conns, brecv) = plt.subplots(3, sharex=True)
+                    f, (dst_ports, conn_flags, conn_types, brecv) = plt.subplots(4, sharex=True)
                     f = f  # get rid of eclipse "unused" warning
 
                     # set figure title and x-axis
@@ -391,63 +414,126 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
 
                     # time-series plot of single Destination IP (indicating Source IPs)
                     # unlikely there will be many duplicates when time being considered
-                    dst_ports.scatter(dst_data[COL_TIME], dst_data[COL_DEST_PORT], c=dst_data[COL_SOURCE_IP], cmap=plt.cm.get_cmap('Paired'))
-                    dst_ports.set_ylabel('Destination Port')
+                    dst_ports.scatter(dst_data[COL_TIME], dst_data[COL_DEST_PORT], marker=".", c=dst_data[COL_SOURCE_IP], cmap=plt.cm.get_cmap('Paired'))
+                    dst_ports.set_ylabel('Port')
                     num_graphs += 1
+
 
                     # plot received #connections over time (cumulative sum of connections along the time-sorted array)
                     # get the times from the packet data
                     conn_times = np.array(dst_data[COL_TIME])
-                    # create a 2S array of 1s, the same length as the number of connections (times)
+                    # create a 2D array of 1s, the same length as the number of connections (times)
                     conn_time_counts = np.ones([len(conn_times), 2])
                     # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                     conn_time_counts[:, 0] = conn_times
-                    conns.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', marker='.', color='y', label="All (" + str(len(conn_times)) + ")")
-                    conns.set_ylabel("#Connections")
+                    conn_flags.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', color='y', label="All (" + str(len(conn_times)) + ")")
+                    conn_times = None
+                    conn_time_counts = None
+                    conn_flags.set_ylabel("# by Flag")
 
-                    # get the times from the packet data
-                    # not ACK
+                    # SYN not ACK
                     syn_connections = dst_data[(dst_data[COL_FLAGS] & FLAG_SYN == FLAG_SYN) & (dst_data[COL_FLAGS] & FLAG_ACK != FLAG_ACK)]
                     if len(syn_connections) > 0:
                         syn_times = np.array(syn_connections[COL_TIME])
-                        # create a 2S array of 1s, the same length as the number of connections (times)
+                        # create a 2D array of 1s, the same length as the number of connections (times)
                         syn_time_counts = np.ones([len(syn_times), 2])
                         # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                         syn_time_counts[:, 0] = syn_times
-                        conns.plot(syn_time_counts[:, 0], np.cumsum(syn_time_counts[:, 1]), linestyle='-', marker='x', color='r', label="SYN (" + str(len(syn_connections)) + ")")
+                        conn_flags.plot(syn_time_counts[:, 0], np.cumsum(syn_time_counts[:, 1]), linestyle='-', color='r', label="SYN (" + str(len(syn_connections)) + ")")
+                        ip_rec['received_syn'] = len(syn_connections)
+                        syn_connections = None
+                        syn_times = None
+                        syn_time_counts = None
 
                     # ACK not SYN
                     ack_connections = dst_data[(dst_data[COL_FLAGS] & FLAG_ACK == FLAG_ACK) & (dst_data[COL_FLAGS] & FLAG_SYN != FLAG_SYN)]
                     if len(ack_connections) > 0:
                         ack_times = np.array(ack_connections[COL_TIME])
-                        # create a 2S array of 1s, the same length as the number of connections (times)
+                        # create a 2D array of 1s, the same length as the number of connections (times)
                         ack_time_counts = np.ones([len(ack_times), 2])
                         # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                         ack_time_counts[:, 0] = ack_times
-                        conns.plot(ack_time_counts[:, 0], np.cumsum(ack_time_counts[:, 1]), linestyle='-', marker='o', color='g', label="ACK (" + str(len(ack_connections)) + ")")
+                        conn_flags.plot(ack_time_counts[:, 0], np.cumsum(ack_time_counts[:, 1]), linestyle='-', color='g', label="ACK (" + str(len(ack_connections)) + ")")
+                        ip_rec['received_ack'] = len(ack_connections)
+                        ack_connections = None
+                        ack_times = None
+                        ack_time_counts = None
 
                     # SYN-ACK
                     synack_connections = dst_data[dst_data[COL_FLAGS] & FLAG_SYNACK == FLAG_SYNACK]
                     if len(synack_connections) > 0:
                         synack_times = np.array(synack_connections[COL_TIME])
-                        # create a 2S array of 1s, the same length as the number of connections (times)
+                        # create a 2D array of 1s, the same length as the number of connections (times)
                         synack_time_counts = np.ones([len(synack_times), 2])
                         # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                         synack_time_counts[:, 0] = synack_times
-                        conns.plot(synack_time_counts[:, 0], np.cumsum(synack_time_counts[:, 1]), linestyle='-', marker='o', color='b', label="SYN-ACK (" + str(len(synack_connections)) + ")")
-
-                    if logger.isEnabledFor(logging.DEBUG):
-                        ip_rec['received_syn'] = len(syn_connections)
-                        ip_rec['received_ack'] = len(ack_connections)
+                        conn_flags.plot(synack_time_counts[:, 0], np.cumsum(synack_time_counts[:, 1]), linestyle='-', color='b', label="SYN-ACK (" + str(len(synack_connections)) + ")")
                         ip_rec['received_synack'] = len(synack_connections)
+                        synack_connections = None
+                        synack_times = None
+                        synack_time_counts = None
 
                     # add legend for the different types of flags in the connections
-                    conns.legend(loc=2)
+                    conn_flags.legend(loc=2)
                     num_graphs += 1
 
+
+                    # plot received #connections over time (cumulative sum of connections along the time-sorted array)
+                    conn_types.set_ylabel("# by Type")
+
+                    # TCP
+                    tcp_connections = dst_data[dst_data[COL_PROTOCOL] == TYPE_TCP]
+                    if len(tcp_connections) > 0:
+                        tcp_times = np.array(tcp_connections[COL_TIME])
+                        # create a 2D array of 1s, the same length as the number of connections (times)
+                        tcp_time_counts = np.ones([len(tcp_times), 2])
+                        # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
+                        tcp_time_counts[:, 0] = tcp_times
+                        conn_types.plot(tcp_time_counts[:, 0], np.cumsum(tcp_time_counts[:, 1]), linestyle='-', color='r', label="TCP (" + str(len(tcp_connections)) + ")")
+
+                        ip_rec['received_tcp'] = len(tcp_connections)
+                        tcp_connections = None
+                        tcp_times = None
+                        tcp_time_counts = None
+
+                    # ICMP
+                    icmp_connections = dst_data[dst_data[COL_PROTOCOL] == TYPE_ICMP]
+                    if len(icmp_connections) > 0:
+                        icmp_times = np.array(icmp_connections[COL_TIME])
+                        # create a 2D array of 1s, the same length as the number of connections (times)
+                        icmp_time_counts = np.ones([len(icmp_times), 2])
+                        # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
+                        icmp_time_counts[:, 0] = icmp_times
+                        conn_types.plot(icmp_time_counts[:, 0], np.cumsum(icmp_time_counts[:, 1]), linestyle='-', color='g', label="ICMP (" + str(len(icmp_connections)) + ")")
+
+                        ip_rec['received_icmp'] = len(icmp_connections)
+                        icmp_connections = None
+                        icmp_times = None
+                        icmp_time_counts = None
+
+                    # UDP
+                    udp_connections = dst_data[dst_data[COL_PROTOCOL] == TYPE_UDP]
+                    if len(udp_connections) > 0:
+                        udp_times = np.array(udp_connections[COL_TIME])
+                        # create a 2D array of 1s, the same length as the number of connections (times)
+                        udp_time_counts = np.ones([len(udp_times), 2])
+                        # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
+                        udp_time_counts[:, 0] = udp_times
+                        conn_types.plot(udp_time_counts[:, 0], np.cumsum(udp_time_counts[:, 1]), linestyle='-', color='b', label="UDP (" + str(len(udp_connections)) + ")")
+
+                        ip_rec['received_udp'] = len(udp_connections)
+                        udp_connections = None
+                        udp_times = None
+                        udp_time_counts = None
+
+                    # add legend for the different types of flags in the connections
+                    conn_types.legend(loc=2)
+                    num_graphs += 1
+
+
                     # plot bytes received over time (cumulative sum of packet lengths along the time-sorted array)
-                    brecv.plot(dst_data[COL_TIME], np.cumsum(dst_data[COL_LENGTH]), linestyle='-', marker='o', color='b')
-                    brecv.set_ylabel("Bytes Received")
+                    brecv.plot(dst_data[COL_TIME], np.cumsum(dst_data[COL_LENGTH]), linestyle='-', color='b')
+                    brecv.set_ylabel("Bytes")
                     num_graphs += 1
 
                     # scale & save image to output dir
@@ -455,17 +541,76 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     plt.savefig(os.path.join(dst_dir, 'time_series.png'))
                     plt.close()
 
+
+                    # create Source summary graphs as subplots in a single figure
+                    plt.clf()
+
+                    # split into sub-arrays by unique Source IP
+                    sorted_dst_srcs = np.sort(dst_data, order=[COL_SOURCE_IP])
+                    dst_src_ips = np.split(sorted_dst_srcs, np.where(np.diff(sorted_dst_srcs[COL_SOURCE_IP]))[0] + 1)
+
+                    # create 2D array of 0s, the same length as the number of Source IPs
+                    dst_srcs = np.empty([len(dst_src_ips), 3], dtype='object')
+                    ip_rec['received_sources'] = len(dst_srcs)
+                    s = 0
+                    for dst_src_data in dst_src_ips:
+                        if len(dst_src_data) > 0:
+                            # determine current Source IP, store with count of connections and sum of bytes transmitted
+                            dst_srcs[s, 0] = _ipv4_int_to_dotted(dst_src_data[0][COL_SOURCE_IP])
+                            dst_srcs[s, 1] = len(dst_src_data)
+                            dst_srcs[s, 2] = np.sum(dst_src_data[COL_LENGTH])
+                            s += 1
+
+                    dst_src_ips = None
+                    if len(dst_srcs) > 0:
+                        f, (src_conns, src_bytes) = plt.subplots(2, sharex=True)
+                        f = f  # get rid of eclipse "unused" warning
+
+                        # set image title
+                        src_conns.set_title(dst_str + " - Source Summary")
+
+                        # x locations for the groups
+                        ind = np.arange(len(dst_srcs))
+
+                        # plot #connections from Source
+                        src_conns.bar(ind, dst_srcs[:, 1], color='r')
+                        src_conns.set_ylabel("#Connections")
+
+                        # plot #bytes from Source
+                        src_bytes.bar(ind, dst_srcs[:, 2], color='y')
+                        src_bytes.set_ylabel("#Bytes")
+
+                        # set x-axis labels
+                        src_bytes.set_xticks(ind)
+                        src_bytes.set_xticklabels(dst_srcs[:, 0])
+                        f.subplots_adjust(bottom=0.25)  # increase space for labels and rotate to make readable
+                        plt.setp(src_bytes.get_xticklabels(), rotation=90)
+
+                        num_graphs += 1
+
+                        # scale & save image to output dir
+                        plt.autoscale(tight=False)
+                        plt.savefig(os.path.join(dst_dir, 'sources_summary.png'))
+                        plt.close()
+
+                    dst_srcs = None
+
                 num_ips += 1
             else:
-                logger.debug("Ignoring Destination data for %s due to filtering", dst_ip)
+                # logger.debug("Ignoring Destination data for %s due to filtering", dst_ip)
+                num_ips = num_ips
 
     if logger.isEnabledFor(logging.DEBUG):
-        debug_ips = {ip:rec for ip, rec in ips.items() if 'received_connections' in rec and rec['received_connections'] > 0}
-        for ip, rec in debug_ips.items():
-            logger.debug("Destination statistics: IP=%s, %s", _ipv4_int_to_dotted(ip), {k:v for k, v in rec.items() if k.startswith('received_') or k.startswith('sent_')})
         logger.debug("IP analysis (%d), graphs (%d) (seconds): %f", num_ips, num_graphs, timer() - step_start)
         logger.debug("Destination Sources - Num: %d, Min: %d, Max: %d, Avg: %f", len(sources), min(sources), max(sources), sum(sources) / len(sources))
         sources = None
+
+    # output stats for IPs
+    stats_ips = {ip:rec for ip, rec in ips.items() if 'received_connections' in rec and rec['received_connections'] > 0}
+    for ip, rec in stats_ips.items():
+        logger.info("Destination statistics: IP=%s, %s", _ipv4_int_to_dotted(ip), {k:v for k, v in rec.items() if k.startswith('received_') or k.startswith('sent_')})
+    stats_ips = None
+    ips = None
 
 def main(argv):
     '''Parse input args and run the PCAP data CSV parser on specified inputfile (-i)

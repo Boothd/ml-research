@@ -23,7 +23,7 @@ handlers:
     filters: [pcap_filter]
   graph_file:
     class: logging.handlers.RotatingFileHandler
-    level: DEBUG
+    level: INFO
     formatter: detailed
     filename: log/csv_to_graph.log
     backupCount: 10
