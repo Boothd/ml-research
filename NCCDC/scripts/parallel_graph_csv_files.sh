@@ -29,4 +29,3 @@ fi
 
 # process each of the CSV files through the graphing script, using the filename as the destination IP filter
 parallel --no-notice --eta --progress "python ${SCRIPT_DIR}/../csv_to_graph.py -i {} -o ${OUTPUT_DIR} -d {/.}" ::: `ls -1 ${CSV_DIR}/*.csv`
-

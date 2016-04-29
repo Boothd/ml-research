@@ -221,7 +221,9 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
             logger.warn("CSV (%s) to array (%d records), insufficient records for analysis (%d) (seconds): %f", csv_file, len(csv_data), lower_bounds, timer() - step_start)
             return
     except TypeError:
-        logger.exception("Unable to confirm length of imported CSV array (%s)", type(csv_data))
+        logger.exception("Unable to confirm length of imported CSV (%s) array object (%s)", csv_file, type(csv_data))
+        import pprint
+        logger.debug("Array with no length: %s", pprint.pformat(csv_data))
         return
 
     # log how long the CSV parsing took and the number of records imported
