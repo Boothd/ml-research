@@ -1,0 +1,103 @@
+sudo apt-get install mysql-server mysqltuner
+
+sudo mysql_secure_installation
+
+Update Ubuntu AppArmor:
+	sudoedit /etc/apparmor.d/usr.sbin.mysqld
+		Add <dir> and <dir>/* from which files are to be loaded, setting permissions to read-only
+	sudo /etc/init.d/apparmor reload
+
+mysql -u root -p
+
+create database nccdc_2015;
+grant all on nccdc_2015.* to 'mlresearch'@'localhost' identified by '****';
+grant file on *.* to 'mlresearch'@'localhost';
+exit
+
+
+mkfifo /media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/database/nccdc.dat
+chmod 666 /media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/database/nccdc.dat
+
+
+mysql -u mlresearch -p -D nccdc_2015 --local-infile --show-warnings
+
+create table if not exists pcap_data (
+	protocol int not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
+	time bigint not null,
+	src bigint not null,
+	dst bigint not null,
+	src_port int null,
+	dst_port int null,
+	ttl int not null,
+	length int not null,
+	fragment int not null,
+	flags int null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
+	INDEX ind_src (src, src_port),
+	INDEX ind_dst (dst, dst_port),
+	INDEX ind_flags (flags),
+	INDEX ind_protocol (protocol)
+);
+
+load data local infile '/media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/database/nccdc.dat' into table pcap_data
+	fields terminated by ','
+	lines terminated by '\n'
+	(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
+	set
+	flags=case @f when '' then null else @f end,
+	src_port=case @sp when '??' then null else @sp end,
+	dst_port=case @dp when '??' then null else @dp end
+;
+
+exit
+
+
+* In a separate thread/terminal:
+	cat /media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/data/processed/csv/*.csv > /media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/database/nccdc.dat
+
+
+
+
+
+
+
+
+
+* Remote (AWS) server
+
+mysql -h mlresearch.cq0hx0grrzou.us-west-2.rds.amazonaws.com -P 3306 -u samo -p
+grant all on nccdc_2015.* to 'naimuri'@'%' identified by '****';
+exit
+
+
+mysql -h mlresearch.cq0hx0grrzou.us-west-2.rds.amazonaws.com -P 3306 -u naimuri -p -D nccdc_2015 --local-infile --show-warnings
+
+create table if not exists pcap_data (
+	protocol int not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
+	time bigint not null,
+	src bigint not null,
+	dst bigint not null,
+	src_port int null,
+	dst_port int null,
+	ttl int not null,
+	length int not null,
+	fragment int not null,
+	flags int null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
+	INDEX ind_src (src, src_port),
+	INDEX ind_dst (dst, dst_port),
+	INDEX ind_flags (flags),
+	INDEX ind_protocol (protocol)
+);
+
+
+load data local infile '/media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/data/2015/processed/csv/dayone.csv' into table pcap_data
+	fields terminated by ','
+	lines terminated by '\n'
+	(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
+	set
+	flags=case @f when '' then null else @f end,
+	src_port=case @sp when '??' then null else @sp end,
+	dst_port=case @dp when '??' then null else @dp end
+;
+
+exit
+
