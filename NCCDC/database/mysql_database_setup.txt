@@ -33,8 +33,8 @@
 
 
 * Create fifo/pipe file for loading multiple files of data
-	mkfifo /tmp/nccdc.dat
-	chmod 666 /tmp/nccdc.dat
+	mkfifo /tmp/nccdc_2015.dat
+	chmod 666 /tmp/nccdc_2015.dat
 
 
 * Connect to local MySQL DB
@@ -46,49 +46,49 @@
 
 
 * Create table
-	create table if not exists pcap_data (
-		protocol tinyint unsigned not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
-		time real not null,
-		ts datetime(6) GENERATED ALWAYS AS (from_unixtime(time)) VIRTUAL,
-		src bigint not null,
-		src_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(src)) VIRTUAL,
-		dst bigint not null,
-		dst_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(dst)) VIRTUAL,
-		src_port smallint unsigned null,
-		dst_port smallint unsigned null,
-		ttl smallint unsigned not null,
-		length smallint unsigned not null,
-		fragment smallint unsigned not null,
-		flags smallint unsigned null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
-		syn tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&2 = 2, 1, 0)) STORED,
-		ack tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&16 = 16, 1, 0)) STORED,
-		rst tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&4 = 4, 1, 0)) STORED,
-		INDEX ind_time (time),
-		INDEX ind_src (src, src_port),
-		INDEX ind_dst (dst, dst_port),
-		INDEX ind_syn (syn),
-		INDEX ind_syn (ack),
-		INDEX ind_syn (rst),
-		INDEX ind_protocol (protocol)
-	);
+create table if not exists pcap_data (
+	protocol tinyint unsigned not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
+	time real not null,
+	ts datetime(6) GENERATED ALWAYS AS (from_unixtime(time)) VIRTUAL,
+	src bigint not null,
+	src_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(src)) VIRTUAL,
+	dst bigint not null,
+	dst_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(dst)) VIRTUAL,
+	src_port smallint unsigned null,
+	dst_port smallint unsigned null,
+	ttl smallint unsigned not null,
+	length smallint unsigned not null,
+	fragment smallint unsigned not null,
+	flags smallint unsigned null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
+	syn tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&2 = 2, 1, 0)) STORED,
+	ack tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&16 = 16, 1, 0)) STORED,
+	rst tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&4 = 4, 1, 0)) STORED,
+	INDEX ind_time (time),
+	INDEX ind_src (src, src_port),
+	INDEX ind_dst (dst, dst_port),
+	INDEX ind_syn (syn),
+	INDEX ind_ack (ack),
+	INDEX ind_rst (rst),
+	INDEX ind_protocol (protocol)
+);
 
 
 * Local table from local fifo/pipe file
 (Connected to mysql client)
-	load data local infile '/tmp/nccdc.dat' into table pcap_data
-		fields terminated by ','
-		lines terminated by '\n'
-		(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
-		set flags = nullif(@f, ''), \
-		src_port = nullif(@sp, '??'), \
-		dst_port = nullif(@dp, '??');
+load data local infile '/tmp/nccdc_2015.dat' into table pcap_data
+	fields terminated by ','
+	lines terminated by '\n'
+	(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
+	set flags = nullif(@f, ''), \
+	src_port = nullif(@sp, '??'), \
+	dst_port = nullif(@dp, '??');
 
 (separate terminal)
 	cat /tmp/data/2015/processed/csv/*.csv > /tmp/nccdc.dat
 
 
 
-* load multiple files (without using a fifo/pipe file)
+* load multiple files remotely (without using a fifo/pipe file)
 	cd /tmp/data/2015/processed/csv/;
 
 	for f in `ls -1`
