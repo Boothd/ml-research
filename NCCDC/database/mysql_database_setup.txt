@@ -1,103 +1,104 @@
-sudo apt-get install mysql-server mysqltuner
+* Install (native) MySQL on Ubuntu
+	sudo apt-get install mysql-server mysqltuner
 
-sudo mysql_secure_installation
 
-Update Ubuntu AppArmor:
+* Install latest MySQL on Ubuntu (using MySQL Apt repos)
+	http://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/
+
+
+* Secure MySQL installation
+	sudo mysql_secure_installation
+
+
+* Update Ubuntu AppArmor (if loading data without the "local" option):
 	sudoedit /etc/apparmor.d/usr.sbin.mysqld
 		Add <dir> and <dir>/* from which files are to be loaded, setting permissions to read-only
 	sudo /etc/init.d/apparmor reload
 
-mysql -u root -p
 
-create database nccdc_2015;
-grant all on nccdc_2015.* to 'mlresearch'@'localhost' identified by '****';
-grant file on *.* to 'mlresearch'@'localhost';
-exit
+* Create NCCDC 2015 database on local host
+	mysql -u root -p
 
-
-mkfifo /media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/database/nccdc.dat
-chmod 666 /media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/database/nccdc.dat
+	create database nccdc_2015;
+	grant all on nccdc_2015.* to 'naimuri'@'localhost' identified by '****';
+	grant file on *.* to 'naimuri'@'localhost';
+	exit
 
 
-mysql -u mlresearch -p -D nccdc_2015 --local-infile --show-warnings
+* Remote (AWS) server (create user)
+	mysql -h mlresearch.cq0hx0grrzou.us-west-2.rds.amazonaws.com -P 3306 -u samo -p
 
-create table if not exists pcap_data (
-	protocol int not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
-	time bigint not null,
-	src bigint not null,
-	dst bigint not null,
-	src_port int null,
-	dst_port int null,
-	ttl int not null,
-	length int not null,
-	fragment int not null,
-	flags int null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
-	INDEX ind_src (src, src_port),
-	INDEX ind_dst (dst, dst_port),
-	INDEX ind_flags (flags),
-	INDEX ind_protocol (protocol)
-);
-
-load data local infile '/media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/database/nccdc.dat' into table pcap_data
-	fields terminated by ','
-	lines terminated by '\n'
-	(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
-	set
-	flags=case @f when '' then null else @f end,
-	src_port=case @sp when '??' then null else @sp end,
-	dst_port=case @dp when '??' then null else @dp end
-;
-
-exit
+	grant all on nccdc_2015.* to 'naimuri'@'%' identified by '****';
+	exit
 
 
-* In a separate thread/terminal:
-	cat /media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/data/processed/csv/*.csv > /media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/database/nccdc.dat
+* Create fifo/pipe file for loading multiple files of data
+	mkfifo /tmp/nccdc.dat
+	chmod 666 /tmp/nccdc.dat
+
+
+* Connect to local MySQL DB
+	mysql -u naimuri -p -D nccdc_2015 --local-infile --show-warnings
+
+
+* Connect to remote (AWS) MySQL DB
+	mysql -h mlresearch.cq0hx0grrzou.us-west-2.rds.amazonaws.com -P 3306 -u naimuri -p -D nccdc_2015 --local-infile
+
+
+* Create table
+	create table if not exists pcap_data (
+		protocol tinyint unsigned not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
+		time real not null,
+		ts datetime(6) GENERATED ALWAYS AS (from_unixtime(time)) VIRTUAL,
+		src bigint not null,
+		src_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(src)) VIRTUAL,
+		dst bigint not null,
+		dst_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(dst)) VIRTUAL,
+		src_port smallint unsigned null,
+		dst_port smallint unsigned null,
+		ttl smallint unsigned not null,
+		length smallint unsigned not null,
+		fragment smallint unsigned not null,
+		flags smallint unsigned null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
+		syn tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&2 = 2, 1, 0)) STORED,
+		ack tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&16 = 16, 1, 0)) STORED,
+		rst tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&4 = 4, 1, 0)) STORED,
+		INDEX ind_time (time),
+		INDEX ind_src (src, src_port),
+		INDEX ind_dst (dst, dst_port),
+		INDEX ind_syn (syn),
+		INDEX ind_syn (ack),
+		INDEX ind_syn (rst),
+		INDEX ind_protocol (protocol)
+	);
+
+
+* Local table from local fifo/pipe file
+(Connected to mysql client)
+	load data local infile '/tmp/nccdc.dat' into table pcap_data
+		fields terminated by ','
+		lines terminated by '\n'
+		(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
+		set flags = nullif(@f, ''), \
+		src_port = nullif(@sp, '??'), \
+		dst_port = nullif(@dp, '??');
+
+(separate terminal)
+	cat /tmp/data/2015/processed/csv/*.csv > /tmp/nccdc.dat
 
 
 
+* load multiple files (without using a fifo/pipe file)
+	cd /tmp/data/2015/processed/csv/;
 
-
-
-
-
-
-* Remote (AWS) server
-
-mysql -h mlresearch.cq0hx0grrzou.us-west-2.rds.amazonaws.com -P 3306 -u samo -p
-grant all on nccdc_2015.* to 'naimuri'@'%' identified by '****';
-exit
-
-
-mysql -h mlresearch.cq0hx0grrzou.us-west-2.rds.amazonaws.com -P 3306 -u naimuri -p -D nccdc_2015 --local-infile --show-warnings
-
-create table if not exists pcap_data (
-	protocol int not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
-	time bigint not null,
-	src bigint not null,
-	dst bigint not null,
-	src_port int null,
-	dst_port int null,
-	ttl int not null,
-	length int not null,
-	fragment int not null,
-	flags int null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
-	INDEX ind_src (src, src_port),
-	INDEX ind_dst (dst, dst_port),
-	INDEX ind_flags (flags),
-	INDEX ind_protocol (protocol)
-);
-
-
-load data local infile '/media/samo/Work/naimuri_futures/machine_learning/predict/ml-research/NCCDC/data/2015/processed/csv/dayone.csv' into table pcap_data
-	fields terminated by ','
-	lines terminated by '\n'
-	(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
-	set
-	flags=case @f when '' then null else @f end,
-	src_port=case @sp when '??' then null else @sp end,
-	dst_port=case @dp when '??' then null else @dp end
-;
-
-exit
+	for f in `ls -1`
+	do
+		mysql -h mlresearch.cq0hx0grrzou.us-west-2.rds.amazonaws.com -P 3306 -u naimuri -p -D nccdc_2015 --local-infile -e "load data local infile '$f' into table pcap_data \
+		fields terminated by ',' \
+		lines terminated by '\n' \
+		(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f) \
+		set flags = nullif(@f, ''), \
+		src_port = nullif(@sp, '??'), \
+		dst_port = nullif(@dp, '??')";
+	done;
 
