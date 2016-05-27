@@ -27,6 +27,7 @@ FLAG_ACK = 16
 # FLAG_URG = 32
 
 FLAG_SYNACK = FLAG_SYN + FLAG_ACK
+FLAG_RSTACK = FLAG_RST + FLAG_ACK
 
 '''int:    Connection type'''
 TYPE_ICMP = 1
@@ -429,7 +430,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     conn_time_counts = np.ones([len(conn_times), 2])
                     # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                     conn_time_counts[:, 0] = conn_times
-                    conn_flags.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', color='yellow', label="All (" + str(len(conn_times)) + ")")
+                    conn_flags.plot(conn_time_counts[:, 0], np.cumsum(conn_time_counts[:, 1]), linestyle='-', color='black', label="All (" + str(len(conn_times)) + ")")
                     conn_times = None
                     conn_time_counts = None
                     conn_flags.set_ylabel("# by Flag").set_fontsize('x-small')
@@ -456,7 +457,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                         ack_time_counts = np.ones([len(ack_times), 2])
                         # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                         ack_time_counts[:, 0] = ack_times
-                        conn_flags.plot(ack_time_counts[:, 0], np.cumsum(ack_time_counts[:, 1]), linestyle='-', color='green', label="ACK (" + str(len(ack_connections)) + ")")
+                        conn_flags.plot(ack_time_counts[:, 0], np.cumsum(ack_time_counts[:, 1]), linestyle='-', color='yellow', label="ACK (" + str(len(ack_connections)) + ")")
                         ip_rec['received_ack'] = len(ack_connections)
                         ack_connections = None
                         ack_times = None
@@ -470,25 +471,39 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                         synack_time_counts = np.ones([len(synack_times), 2])
                         # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                         synack_time_counts[:, 0] = synack_times
-                        conn_flags.plot(synack_time_counts[:, 0], np.cumsum(synack_time_counts[:, 1]), linestyle='-', color='blue', label="SYN-ACK (" + str(len(synack_connections)) + ")")
+                        conn_flags.plot(synack_time_counts[:, 0], np.cumsum(synack_time_counts[:, 1]), linestyle='-', color='orange', label="SYN-ACK (" + str(len(synack_connections)) + ")")
                         ip_rec['received_synack'] = len(synack_connections)
                         synack_connections = None
                         synack_times = None
                         synack_time_counts = None
 
-                    # RST
-                    rst_connections = dst_data[dst_data[COL_FLAGS] & FLAG_RST == FLAG_RST]
+                    # RST not ACK
+                    rst_connections = dst_data[(dst_data[COL_FLAGS] & FLAG_RST == FLAG_RST) & (dst_data[COL_FLAGS] & FLAG_ACK != FLAG_ACK)]
                     if len(rst_connections) > 0:
                         rst_times = np.array(rst_connections[COL_TIME])
                         # create a 2D array of 1s, the same length as the number of connections (times)
                         rst_time_counts = np.ones([len(rst_times), 2])
                         # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
                         rst_time_counts[:, 0] = rst_times
-                        conn_flags.plot(rst_time_counts[:, 0], np.cumsum(rst_time_counts[:, 1]), linestyle='-', color='black', label="RST (" + str(len(rst_connections)) + ")")
+                        conn_flags.plot(rst_time_counts[:, 0], np.cumsum(rst_time_counts[:, 1]), linestyle='-', color='blue', label="RST (" + str(len(rst_connections)) + ")")
                         ip_rec['received_rst'] = len(rst_connections)
                         rst_connections = None
                         rst_times = None
                         rst_time_counts = None
+
+                    # RST-ACK
+                    rstack_connections = dst_data[dst_data[COL_FLAGS] & FLAG_RSTACK == FLAG_RSTACK]
+                    if len(rst_connections) > 0:
+                        rstack_times = np.array(rstack_connections[COL_TIME])
+                        # create a 2D array of 1s, the same length as the number of connections (times)
+                        rstack_time_counts = np.ones([len(rstack_times), 2])
+                        # insert the connection times at index 0, then use the additional column of 1s for the cumsum operation
+                        rstack_time_counts[:, 0] = rstack_times
+                        conn_flags.plot(rstack_time_counts[:, 0], np.cumsum(rstack_time_counts[:, 1]), linestyle='-', color='green', label="RST-ACK (" + str(len(rstack_connections)) + ")")
+                        ip_rec['received_rstack'] = len(rstack_connections)
+                        rstack_connections = None
+                        rstack_times = None
+                        rstack_time_counts = None
 
                     # add legend for the different types of flags in the connections
                     box = conn_flags.get_position()
