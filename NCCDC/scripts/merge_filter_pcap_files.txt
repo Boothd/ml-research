@@ -1,0 +1,8 @@
+* Merge all pcap files in /data/pcap to a single pcap file in /tmp (sorts records chronollogically, use -a to prevent sorting)
+	mergecap -F pcap -w /tmp/dayone.pcap `ls /data/pcap`
+
+* Filter pcap file for single host communications (to/from IP; -n turns off name resolution)
+	tshark -n -r /tmp/dayone.pcap -w /tmp/filtered.pcap -f "host 10.10.10.205"
+
+For more capture filter settings, see https://wiki.wireshark.org/CaptureFilters
+
