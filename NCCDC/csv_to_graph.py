@@ -449,8 +449,8 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                         syn_times = None
                         syn_time_counts = None
 
-                    # ACK not SYN
-                    ack_connections = dst_data[(dst_data[COL_FLAGS] & FLAG_ACK == FLAG_ACK) & (dst_data[COL_FLAGS] & FLAG_SYN != FLAG_SYN)]
+                    # ACK not SYN or RST
+                    ack_connections = dst_data[(dst_data[COL_FLAGS] & FLAG_ACK == FLAG_ACK) & (dst_data[COL_FLAGS] & FLAG_SYN != FLAG_SYN) & (dst_data[COL_FLAGS] & FLAG_RST != FLAG_RST)]
                     if len(ack_connections) > 0:
                         ack_times = np.array(ack_connections[COL_TIME])
                         # create a 2D array of 1s, the same length as the number of connections (times)
@@ -493,7 +493,7 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
 
                     # RST-ACK
                     rstack_connections = dst_data[dst_data[COL_FLAGS] & FLAG_RSTACK == FLAG_RSTACK]
-                    if len(rst_connections) > 0:
+                    if len(rstack_connections) > 0:
                         rstack_times = np.array(rstack_connections[COL_TIME])
                         # create a 2D array of 1s, the same length as the number of connections (times)
                         rstack_time_counts = np.ones([len(rstack_times), 2])
