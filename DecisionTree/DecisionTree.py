@@ -2,6 +2,12 @@ import numpy;
 from numpy import recfromcsv;
 from sklearn import tree;
 from sklearn.externals.six import StringIO;
+from sklearn.externals.six import StringIO  
+import pydot 
+
+
+from sklearn.datasets import load_iris
+
 
 ##
 # Function takes an array of ports and returns the range as an int.
@@ -54,6 +60,10 @@ def convertToInt(i):
 
 
 def main():
+	# iris = load_iris();
+	# print(iris.target);
+	# print(iris.data);
+
 	data = recfromcsv('sample.csv', delimiter=',', skip_header=0);
 	data.dtype.names = ('Protocol',	'Time',	'Source IP','Desination IP','Source Port','Destination Port','Time to Live','Length','Fragments','Flags');
 	SOURCE_IP = 2;
@@ -75,17 +85,28 @@ def main():
 	notAPortScan1 = createFeatureArray(hashMap[175636512]);
 	notAPortScan2 = createFeatureArray(hashMap[175753235]);
 	portScan = createFeatureArray(hashMap[173693690]);
+	portScan = numpy.array(portScan).astype(int);
 
 	samples.append(posiblePortScanButProbablyNot);
 	samples.append(notAPortScan1);
 	samples.append(notAPortScan2);
+	samples.append(portScan);
+	samples = numpy.array(samples).astype(int);
+
 
 	clf = tree.DecisionTreeClassifier()
-	clf = clf.fit(samples, portScan);
+	clf = clf.fit(samples, [0,0,0,1]);
 
 
 	with open("portScan.dot", 'w') as f:
 		f = tree.export_graphviz(clf, out_file=f)
+
+	dot_data = StringIO() 
+	tree.export_graphviz(clf, out_file=dot_data) 
+	graph = pydot.graph_from_dot_data(dot_data.getvalue()) 
+	graph.write_pdf("portScan.pdf") 
+
+	#os.unlink('portScan.dot');
 
 	#generate matrix containing three features for each IP; total, range, SD.
 	#use 2886753021 and 173693690 as training set.
