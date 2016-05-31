@@ -3,8 +3,21 @@ from numpy import recfromcsv;
 from sklearn import tree;
 from sklearn.externals.six import StringIO;
 from sklearn.externals.six import StringIO;
-import pydot;
 import sys;
+#import pydot;
+
+##
+# Author: D Booth
+# Usage DecisionTree.py <traffic.csv>
+#
+# Python code which builds a decision tree from a simple sample set of data of port scans.
+# Run the code by passing in the name of a csv file you would like the code to make a 
+# prediction of possible port scan attacks against.
+# The program will return the IP Address it thinks are being scanned.
+# 
+# Requirements: Python2.7, Anaconda 1.2.1, 
+##
+
 
 ##
 # Function takes an array of ports and returns the range as an int.
