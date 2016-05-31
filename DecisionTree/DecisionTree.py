@@ -4,6 +4,7 @@ from sklearn import tree;
 from sklearn.externals.six import StringIO;
 from sklearn.externals.six import StringIO;
 import sys;
+import pickle;
 #import pydot;
 
 ##
@@ -14,6 +15,7 @@ import sys;
 # Run the code by passing in the name of a csv file you would like the code to make a 
 # prediction of possible port scan attacks against.
 # The program will return the IP Address it thinks are being scanned.
+# Currently using Range SD and Total as the features for the network data.
 # 
 # Requirements: Python2.7, Anaconda 1.2.1, 
 ##
@@ -163,6 +165,7 @@ def createTrainingSet(file):
 	notAPortScan1 = createFeatureArray(hashMap[175636512]);
 	notAPortScan2 = createFeatureArray(hashMap[175753235]);
 	portScan = createFeatureArray(hashMap[173693690]);
+	portScan2 = createFeatureArray(hashMap[168430330]);
 
 	#make sure all fields are ints.
 	portScan = numpy.array(portScan).astype(int);
@@ -171,12 +174,22 @@ def createTrainingSet(file):
 	samples.append(notAPortScan1);
 	samples.append(notAPortScan2);
 	samples.append(portScan);
+	samples.append(portScan2);
+
+	#make sure all fields are ints.
 	samples = numpy.array(samples).astype(int);
 
-
 	clf = tree.DecisionTreeClassifier();
-	clf = clf.fit(samples, [0,0,0,1]);
+	clf = clf.fit(samples, [0,0,0,1,1]);
 	return clf;
+
+def saveFile(object, fileName):
+	trainingSet = open(fileName, 'w');
+	pickle.dump(object, trainingSet);
+	trainingSet.close();
+
+def loadFile(fileName):
+	return pickle.load(open(fileName, 'r'));
 
 
 def main():
@@ -199,13 +212,5 @@ def main():
 	for index, val in enumerate(prediction):
 		if val == 1:
 			print(featureArray[0][index]);
-
-
-
-
-	#generate matrix containing three features for each IP; total, range, SD.
-	#use 2886753021 and 173693690 as training set.
-	#run against all the data?
-	#probably need more data!
 
 main();
