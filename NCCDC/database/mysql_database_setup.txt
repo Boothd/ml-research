@@ -169,11 +169,10 @@ commit;
         cat /tmp/data/2015/processed/csv/*.csv > /tmp/nccdc_2015.csv
 
 * split file and load in chunks - can speed up data loading
-        pt-fifo-split --statistics --lines 1000000 nccdc_2015.csv
+        pt-fifo-split --statistics --lines 1000000 maccdc_2012.csv
 
 (separate terminal)
-        MYSQL_PWD=******;
-        while [ -e /tmp/pt-fifo-split ]; do mysql -u mlresearch -p${MYSQL_PWD} -D pcap_data -e "set @@session.sql_log_bin=0; set unique_checks = 0; set foreign_key_checks = 0; set sql_log_bin=0; set autocommit = 0; load data local infile '/tmp/pt-fifo-split' into table nccdc_2015 fields terminated by ',' lines terminated by '\n' (@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f) set flags = nullif(@f, ''), src_port = nullif(@sp, '??'), dst_port = nullif(@dp, '??'); commit ;"; done
+        MYSQL_PWD=******; while [ -e /tmp/pt-fifo-split ]; do mysql -u mlresearch -p${MYSQL_PWD} -D pcap_data -e "set @@session.sql_log_bin=0; set unique_checks = 0; set foreign_key_checks = 0; set sql_log_bin=0; set autocommit = 0; load data local infile '/tmp/pt-fifo-split' into table maccdc_2012 fields terminated by ',' lines terminated by '\n' (@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f) set flags = nullif(@f, ''), src_port = nullif(@sp, '??'), dst_port = nullif(@dp, '??'); commit ;"; done
 
 
 
