@@ -73,9 +73,50 @@ create table if not exists pcap_data (
 );
 
 
+* Create table (raw)
+create table if not exists nccdc_2015 (
+	protocol tinyint unsigned not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
+	time real not null,
+	src bigint not null,
+	dst bigint not null,
+	src_port smallint unsigned null,
+	dst_port smallint unsigned null,
+	ttl smallint unsigned not null,
+	length smallint unsigned not null,
+	fragment smallint unsigned not null,
+	flags smallint unsigned null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
+        syn tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&2 = 2, 1, 0)) STORED,
+        ack tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&16 = 16, 1, 0)) STORED,
+        rst tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&4 = 4, 1, 0)) STORED
+);
+
+
+* Add generated columns
+	alter table nccdc_2015 add ts datetime(6) GENERATED ALWAYS AS (from_unixtime(time)) VIRTUAL;
+	alter table nccdc_2015 add src_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(src)) VIRTUAL;
+	alter table nccdc_2015 add dst_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(dst)) VIRTUAL;
+
+
+* Add indices
+	create INDEX ind_time (time) on nccdc_2015;
+	create INDEX ind_src (src, src_port) on nccdc_2015;
+	create INDEX ind_dst (dst, dst_port) on nccdc_2015;
+	create INDEX ind_syn (syn) on nccdc_2015;
+	create INDEX ind_ack (ack) on nccdc_2015;
+	create INDEX ind_rst (rst) on nccdc_2015;
+	create INDEX ind_protocol (protocol) on nccdc_2015;
+
+
 * Local table from local fifo/pipe file
 (Connected to mysql client)
-load data local infile '/tmp/nccdc_2015.dat' into table pcap_data
+
+SET @@session.sql_log_bin=0;
+set unique_checks = 0;
+set foreign_key_checks = 0;
+set sql_log_bin=0;
+set autocommit = 0;
+
+load data local infile '/tmp/nccdc_2015.csv' into table nccdc_2015
 	fields terminated by ','
 	lines terminated by '\n'
 	(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
@@ -83,8 +124,15 @@ load data local infile '/tmp/nccdc_2015.dat' into table pcap_data
 	src_port = nullif(@sp, '??'), \
 	dst_port = nullif(@dp, '??');
 
+commit;
+
+
 (separate terminal)
 	cat /tmp/data/2015/processed/csv/*.csv > /tmp/nccdc.dat
+
+	pt-fifo-split --lines 1000000 hugefile.txt
+	while [ -e /tmp/pt-fifo-split ]; do cat /tmp/pt-fifo-split; done
+
 
 
 

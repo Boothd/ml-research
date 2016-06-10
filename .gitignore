@@ -2,6 +2,7 @@
 data/
 Backscatter/
 upload/
+DOS/pcaps/
 
 # log files
 log/*.*
