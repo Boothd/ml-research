@@ -86,7 +86,7 @@
 
 
 * Create table
-create table if not exists pcap_data (
+create table if not exists maccdc_2012 (
 	protocol tinyint unsigned not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
 	time real not null,
 	ts datetime(6) GENERATED ALWAYS AS (from_unixtime(time)) VIRTUAL,
@@ -150,12 +150,11 @@ create table if not exists nccdc_2015 (
 * Local table from local fifo/pipe file
 (Connected to mysql client)
 
-SET @@session.sql_log_bin=0;
+set @@session.sql_log_bin=0;
+set sql_log_bin=0;
 set unique_checks = 0;
 set foreign_key_checks = 0;
-set sql_log_bin=0;
 set autocommit = 0;
-
 load data local infile '/tmp/nccdc_2015.csv' into table nccdc_2015
 	fields terminated by ','
 	lines terminated by '\n'
@@ -163,16 +162,18 @@ load data local infile '/tmp/nccdc_2015.csv' into table nccdc_2015
 	set flags = nullif(@f, ''), \
 	src_port = nullif(@sp, '??'), \
 	dst_port = nullif(@dp, '??');
-
 commit;
 
 
 (separate terminal)
-	cat /tmp/data/2015/processed/csv/*.csv > /tmp/nccdc.dat
+        cat /tmp/data/2015/processed/csv/*.csv > /tmp/nccdc_2015.csv
 
-	pt-fifo-split --lines 1000000 hugefile.txt
-	while [ -e /tmp/pt-fifo-split ]; do cat /tmp/pt-fifo-split; done
+* split file and load in chunks - can speed up data loading
+        pt-fifo-split --statistics --lines 1000000 nccdc_2015.csv
 
+(separate terminal)
+        MYSQL_PWD=******;
+        while [ -e /tmp/pt-fifo-split ]; do mysql -u mlresearch -p${MYSQL_PWD} -D pcap_data -e "set @@session.sql_log_bin=0; set unique_checks = 0; set foreign_key_checks = 0; set sql_log_bin=0; set autocommit = 0; load data local infile '/tmp/pt-fifo-split' into table nccdc_2015 fields terminated by ',' lines terminated by '\n' (@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f) set flags = nullif(@f, ''), src_port = nullif(@sp, '??'), dst_port = nullif(@dp, '??'); commit ;"; done
 
 
 
