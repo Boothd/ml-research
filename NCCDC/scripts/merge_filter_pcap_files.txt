@@ -5,7 +5,7 @@
 	tshark -n -r /tmp/dayone.pcap -w /tmp/filtered.pcap "ip.addr == 10.10.10.205"
 
 * Filter multiple pcap files
-	for f in `ls -1 ${indir}/*.pcap`; do fp="${$f##*/}"; of="${outdir}/filtered_$f.pcap"; out="${out} ${of}"; do tshark -n -r $f -w ${of} "ip.addr == 10.10.10.205"; done; mergecap -F pcap -w ${outdir}/merged.pcap ${out};
+	indir=*****; outdir=*****; for f in `ls -1 ${indir}/*.pcap`; do fnp="${f##*/}"; of="${outdir}/filtered_$fn.pcap"; out="${out} ${of}"; tshark -n -r $f -w ${of} "ip.addr == 10.10.10.205"; done; mergecap -F pcap -w ${outdir}/merged.pcap ${out};
 
 For more display filter settings, see https://wiki.wireshark.org/DisplayFilters
 
