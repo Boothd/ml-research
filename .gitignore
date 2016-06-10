@@ -3,6 +3,7 @@ data/
 Backscatter/
 upload/
 DOS/pcaps/
+DOS/bonesi/
 
 # log files
 log/*.*
