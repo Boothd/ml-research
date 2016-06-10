@@ -138,13 +138,13 @@ create table if not exists nccdc_2015 (
 
 
 * Add indices
-	create INDEX ind_time (time) on nccdc_2015;
-	create INDEX ind_src (src, src_port) on nccdc_2015;
-	create INDEX ind_dst (dst, dst_port) on nccdc_2015;
-	create INDEX ind_syn (syn) on nccdc_2015;
-	create INDEX ind_ack (ack) on nccdc_2015;
-	create INDEX ind_rst (rst) on nccdc_2015;
-	create INDEX ind_protocol (protocol) on nccdc_2015;
+	create INDEX ind_time on nccdc_2015 (time);
+	create INDEX ind_src on nccdc_2015 (src, src_port);
+	create INDEX ind_dst on nccdc_2015 (dst, dst_port);
+	create INDEX ind_syn on nccdc_2015 (syn);
+	create INDEX ind_ack on nccdc_2015 (ack);
+	create INDEX ind_rst on nccdc_2015 (rst);
+	create INDEX ind_protocol on nccdc_2015 (protocol);
 
 
 * Local table from local fifo/pipe file
