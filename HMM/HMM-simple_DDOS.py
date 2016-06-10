@@ -36,11 +36,11 @@ transition_probability = np.array([
 	[0.1, 0.2, 0.7]
 ])
 
-# The probability that given a certain emission event, we are in  a given state.
+# The probability that given a certain emission event, we are in a given state.
 # ie probability p that given a RESOURCE event (increase in resource usage) is the state
 # ALL_IS_WELL, PRECURSOR_1 or UNDER_ATTACK
 #
-# 'ALL_IS_WELL': {'NORM': p, 'URL':p, 'HEADER':p, 'RESOURCE':p },
+# 'ALL_IS_WELL'		: {'NORM': p, 'URL':p, 'HEADER':p, 'RESOURCE':p },
 # 'PRECURSOR_1'		: {'NORM': p, 'URL':p, 'HEADER':p, 'RESOURCE':p },
 # 'UNDER_ATTACK'	: {'NORM': p, 'URL':p, 'HEADER':p, 'RESOURCE':p },
 emission_probability = np.array([
