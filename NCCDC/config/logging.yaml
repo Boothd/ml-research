@@ -7,6 +7,8 @@ filters:
     name: pcap_to_csv
   graph_filter:
     name: csv_to_graph
+  port_scanner_filter:
+    name: port_scanner
 handlers:
   console_err:
     class: logging.StreamHandler
@@ -29,12 +31,23 @@ handlers:
     backupCount: 10
     maxBytes: 10485760
     filters: [graph_filter]
+  port_scanner_file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: log/port_scanner.log
+    backupCount: 10
+    maxBytes: 10485760
+    filters: [port_scanner_filter]
 loggers:
   pcap_to_csv:
     handlers: [pcap_file]
     propagate: no
   csv_to_graph:
     handlers: [graph_file]
+    propagate: no
+  port_scanner:
+    handlers: [port_scanner_file]
     propagate: no
 root:
   level: DEBUG
