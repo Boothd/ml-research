@@ -25,4 +25,4 @@ then
         fi
 fi
 
-sort -t, -k5,5n -k3,3g $CSV_DIR/*.csv | awk -F, '{print >> ("${OUTPUT_DIR}/"$4".csv"); print >> ("${OUTPUT_DIR}/"$2".csv")}'
+sort -t, -k5,5n -k3,3g $CSV_DIR/*.csv | awk -F, "{print >> (\"${OUTPUT_DIR}/\"$4\".csv\"); print >> (\"${OUTPUT_DIR}/\"$2\".csv\")}"
