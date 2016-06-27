@@ -5,7 +5,7 @@
 This program uses nmap to scan for open ports on remote host(s)
 
 Example:
-    $ python __file__ -t 192.168.0.1 -s -r
+    $ python __file__ -t 192.168.0.1 -s -r -n "-e <wifi_device_id>"
 
 Author: chris.sampson@naimuri.com
 '''
@@ -14,6 +14,7 @@ import logging.config, yaml
 import sys, getopt, os.path, random
 from time import sleep
 from timeit import default_timer as timer
+import pprint
 
 import nmap
 
@@ -77,7 +78,9 @@ def scan_ports(target_host, min_port, max_port, port_range_increment, min_time, 
         # log nmap command and some results
         logger.debug("nmap command line: %s", nm.command_line())
         logger.debug("nmap scan info: %s", nm.scaninfo())
-        logger.debug("nmap result: %s", nm.csv())
+
+	# TODO: output meaningful results
+        logger.debug("nmap result: %s", pprint.pformat(nm.csv()))
         
         # wait before next scan if there are scans left to perform
         if (s+1) < num_scans:
