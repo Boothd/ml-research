@@ -78,8 +78,10 @@ def scan_ports(target_host, min_port, max_port, port_range_increment, min_time, 
         # log nmap command and some results
         logger.debug("nmap command line: %s", nm.command_line())
         logger.debug("nmap scan info: %s", nm.scaninfo())
+        logger.debug("nmap scan stats: %s", nm.scanstats())
+        logger.debug("nmap last output: %s", nm.get_nmap_last_output())
 
-	# TODO: output meaningful results
+	    # TODO: output meaningful results
         logger.debug("nmap result: %s", pprint.pformat(nm.csv()))
         
         # wait before next scan if there are scans left to perform
