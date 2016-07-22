@@ -1,4 +1,6 @@
 # use latest version of nginx
 FROM nginx
+MAINTAINER daniel.booth@naimuri.com
+
 COPY html /usr/share/nginx/html
-MAINTAINER chris.sampson@naimuri.com
+
