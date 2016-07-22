@@ -31,5 +31,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # disable rp_filter (desired by BONESI)
 ADD 90-disable-rp_filter.conf /etc/sysctl.d/
 
-#ENTRYPOINT ["bonesi", "target:80"]
+# allow config and stats files to be controlled from outside container, e.g. ips, url_list, useragent_list, stats_file
+VOLUME /bonesi-config /bonesi-stats
 
