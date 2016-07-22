@@ -10,3 +10,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           tcpdump \
   && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update
+RUN apt-get install curl
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
+RUN apt-get install -y nodejs
+
+RUN mkdir /opt/node/
+COPY node /opt/node/
+WORKDIR /opt/node/
+RUN npm install
+CMD [ "npm", "start" ]
