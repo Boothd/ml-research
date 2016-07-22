@@ -2,9 +2,16 @@ version: '2'
 services:
   nginx-server:
     build: ./../nginx-webserver
-    ports: 
-        - "8080:80"
-  attacker:
-    build: ./../ubuntu-ddos
+#    ports: 
+#        - "8080:80"
+  nodejs-server:
+    build: ./../nodejs-webserver
+    ports:
+        - "8888:8888"
+#  attacker:
+#    build: ./../ubuntu-ddos
+#  scanner:
+#    build: ./../ubuntu-port-scanner
   probe:
     build: ./../ubuntu-probe
+

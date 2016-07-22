@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           unzip \
   && rm -rf /var/lib/apt/lists/* \
 # get latest version of bonesi
-  && wget https://github.com/Markus-Go/bonesi/archive/master.zip -O master.zip \
+  && wget -nv https://github.com/Markus-Go/bonesi/archive/master.zip \
   && unzip master.zip \
   && rm master.zip \
 # configure and install bonesi
@@ -26,8 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && ./configure \
   && make \
   && make install \
-  && apt-get purge -y unzip wget
+  && apt-get purge -y unzip wget && apt-get autoremove -y
 
 # disable rp_filter (desired by BONESI)
-ADD 90-disable-rp_filter.conf /etc/sysctl.d/
+COPY 90-disable-rp_filter.conf /etc/sysctl.d/
 

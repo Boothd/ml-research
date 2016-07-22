@@ -1,3 +1,5 @@
 FROM node:4-onbuild
-#COPY nodejs /opt/nodejs
+MAINTAINER daniel.booth@naimuri.com
+
 EXPOSE 8888
+

@@ -2,17 +2,29 @@
 FROM ubuntu:latest
 MAINTAINER chris.sampson@naimuri.com
 
-ENV TF_BINARY=tensorflow-0.9.0-cp35-cp35m-linux_x86_64.whl
+# install anaconda
 ENV ANACONDA=Anaconda3-4.1.1-Linux-x86_64.sh
+ENV ANACONDA_DIR=/anaconda3
 
-# install python, nmap and port_scanner script
 RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
-          wget
-  && rm -rf /var/lib/apt/lists/* \
-  && wget http://repo.continuum.io/archive/${ANACONDA} -O ${ANACONDA} \
-  && bash ${ANACONDA} \
+          bzip2 \
+  && rm -rf /var/lib/apt/lists/*
+ADD http://repo.continuum.io/archive/${ANACONDA} /
+RUN bash ${ANACONDA} -b -p ${ANACONDA_DIR} \
   && rm ${ANACONDA} \
-  && pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/${TF_BINARY} \
-  && apt-get purge -y wget
+  && apt-get purge -y bzip2 && apt-get autoremove -y
+
+
+# install tensorflow
+ENV TF_CPU_OR_GPU=cpu
+ENV TF_BINARY=tensorflow-0.9.0-cp35-cp35m-linux_x86_64.whl
+
+RUN ${ANACONDA_DIR}/bin/pip install --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/linux/${TF_CPU_OR_GPU}/${TF_BINARY}
+
+
+# setup image defaults for run
+WORKDIR ${ANACONDA_DIR}
+ENV PATH="${ANCONDA_DIR}/bin:$PATH"
+ENTRYPOINT ["${ANCONDA_DIR}/bin/python3"]
 
