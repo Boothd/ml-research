@@ -13,5 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && wget http://repo.continuum.io/archive/${ANACONDA} -O ${ANACONDA} \
   && bash ${ANACONDA} \
   && rm ${ANACONDA} \
-  && pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/${TF_BINARY}
+  && pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/${TF_BINARY} \
+  && apt-get purge wget
 
