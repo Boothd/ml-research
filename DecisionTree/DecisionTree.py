@@ -11,11 +11,12 @@ import pickle;
 # Author: D Booth
 # Usage DecisionTree.py <traffic.csv>
 #
-# Python code which builds a decision tree from a simple sample set of data of port scans.
-# Run the code by passing in the name of a csv file you would like the code to make a 
-# prediction of possible port scan attacks against.
-# The program will return the IP Address it thinks are being scanned.
-# Currently using Range SD and Total as the features for the network data.
+# SK Learn Algorithm which implements a decision tree from a simple sample set of data 
+# of port scans.
+# Run the code by passing in the name of a csv file, the algorithm will make a  
+# prediction of possible port scan attacks in the data set.
+# The algorithm will return the IP Address it thinks are being scanned.
+# Currently using Range, SD and Total as the features for the network data.
 # 
 # Requirements: Python2.7, Anaconda 1.2.1, 
 ##
@@ -53,7 +54,8 @@ def getSD(ports):
 # Function an array of ports and returns the total number of ports in the array.
 ##
 def getTotal(ports):
-	return len(ports);
+	return len(numpy.unique(ports));
+	#return len(ports);
 #getTotal
 
 ##
@@ -129,7 +131,8 @@ def csvToHashMapNoHeaders(csvFile):
 			port = convertToInt(i[DESTINATION_IP]);
 			if type(port) == int:
 				hashMap.get(i[SOURCE_IP]).append(port);
-
+	# print("******");
+	# print(hashMap[168820738]);
 	return hashMap;
 #csvToHashMap
 
@@ -149,6 +152,7 @@ def hashMapToFeatureArray(hashMap):
 	#for
 	featureArray[1] = numpy.array(featureArray[1]).astype(int);
 	return featureArray;
+#hashMapToFeatureArray
 
 def test():
 	array = (0, 0, 1, 0, 1, 0, 1, 1, 0);
@@ -157,31 +161,54 @@ def test():
 	 	if val == 1:
 	 		print(index);
 
+def printFeatureArray(port, array):
+	print(str(port)+": "+str(array));
+
+
 def createTrainingSet(file):
 	hashMap = csvToHashMap(file);
 
 	samples = [];
 	posiblePortScanButProbablyNot = createFeatureArray(hashMap[134743044]);
+	printFeatureArray(str(134743044),str(posiblePortScanButProbablyNot));
+
 	notAPortScan1 = createFeatureArray(hashMap[175636512]);
+	printFeatureArray(str(175636512),str(notAPortScan1));
+
 	notAPortScan2 = createFeatureArray(hashMap[175753235]);
+	printFeatureArray(str(175753235),str(notAPortScan2));
+
 	portScan = createFeatureArray(hashMap[173693690]);
+	printFeatureArray(str(175636489),str(portScan));
+
 	portScan2 = createFeatureArray(hashMap[168430330]);
+	printFeatureArray(str(168430330),str(portScan2));
+
+	notAPortScan3 = createFeatureArray(hashMap[178916423]);
+	printFeatureArray(str(178916423),str(notAPortScan3));
+	
+	notAPortScan4 = createFeatureArray(hashMap[175636489]);
+	printFeatureArray(str(175636489),str(notAPortScan4));
+
 
 	#make sure all fields are ints.
-	portScan = numpy.array(portScan).astype(int);
+	#portScan = numpy.array(portScan).astype(int);
 
 	samples.append(posiblePortScanButProbablyNot);
 	samples.append(notAPortScan1);
 	samples.append(notAPortScan2);
 	samples.append(portScan);
 	samples.append(portScan2);
+	samples.append(notAPortScan3);
+	samples.append(notAPortScan4);
 
 	#make sure all fields are ints.
 	samples = numpy.array(samples).astype(int);
 
 	clf = tree.DecisionTreeClassifier();
-	clf = clf.fit(samples, [0,0,0,1,1]);
+	clf = clf.fit(samples, [0,0,0,1,1,0,0]);
 	return clf;
+#createTrainingSet
 
 def saveFile(object, fileName):
 	trainingSet = open(fileName, 'w');
@@ -191,10 +218,21 @@ def saveFile(object, fileName):
 def loadFile(fileName):
 	return pickle.load(open(fileName, 'r'));
 
+def from_string(s):
+  "Convert dotted IPv4 address to integer."
+  return reduce(lambda a,b: a<<8 | b, map(int, s.split(".")))
+
+def to_string(ip):
+  "Convert 32-bit integer to dotted IPv4 address."
+  return ".".join(map(lambda n: str(ip>>n & 0xFF), [24,16,8,0]))
+
+  
+
 
 def main():
 	
 	csvFileName = sys.argv[1];
+	#hostIpsArray = sys.argv[2];
 	
 	print("Creating training set");
 	clf = createTrainingSet('sample.csv');
@@ -211,6 +249,6 @@ def main():
 	print("The following IP's are possible port scans.");
 	for index, val in enumerate(prediction):
 		if val == 1:
-			print(featureArray[0][index]);
+			print(str(featureArray[0][index])+" : "+to_string(featureArray[0][index]));
 
 main();
