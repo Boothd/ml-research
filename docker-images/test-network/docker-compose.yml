@@ -1,0 +1,10 @@
+version: '2'
+services:
+  nginx-server:
+    build: ./../nginx-webserver
+    ports: 
+        - "8080:80"
+  attacker:
+    build: ./../ubuntu-ddos
+  probe:
+    build: ./../ubuntu-probe
