@@ -36,7 +36,7 @@ def _print_usage(exit_code=0):
     '''
     f = sys.stderr if exit_code > 0 else sys.stdout
 
-    print(__file__ + " [--min-port=<min port>] [--max-port=<max port>] [--port-inc=<port_range_increment>] [--min-time=<min time>] [--max-time=<max time>] [--num-scans=<num scans>] [-n <nmap options>|--nmap-ops=<nmap options>] [-r|--randomise] -t|--target-host=<target host>", file=f)
+    print(__file__ + " [--min-port=<min port>] [--max-port=<max port>] [--port-inc=<port_range_increment>] [--min-time=<min time>] [--max-time=<max time>] [--num-scans=<num scans>] [-n <nmap options>|--nmap-opts=<nmap options>] [-r|--randomise] -t|--target-host=<target host>", file=f)
     # TODO: elaborate on args
 
     sys.exit(exit_code)
