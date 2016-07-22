@@ -4,5 +4,8 @@
 * Filter pcap file for single host communications (to/from IP; -n turns off name resolution)
 	tshark -n -r /tmp/dayone.pcap -w /tmp/filtered.pcap "ip.addr == 10.10.10.205"
 
+* Filter multiple pcap files
+	indir=*****; outdir=*****; for f in `ls -1 ${indir}/*.pcap`; do fnp="${f##*/}"; of="${outdir}/filtered_$fn.pcap"; out="${out} ${of}"; tshark -n -r $f -w ${of} "ip.addr == 10.10.10.205"; done; mergecap -F pcap -w ${outdir}/merged.pcap ${out};
+
 For more display filter settings, see https://wiki.wireshark.org/DisplayFilters
 

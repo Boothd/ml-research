@@ -5,9 +5,49 @@
 * Install latest MySQL on Ubuntu (using MySQL Apt repos)
 	http://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/
 
+* Install Percona Toolkit (https://www.percona.com)
+	sudo dpkg -i percona-toolkit_2.2.17-1_all.deb
 
 * Secure MySQL installation
 	sudo mysql_secure_installation
+
+* Configure for performance (Percona offer a free configuration wizard on their website - https://tools.percona.com)
+(your configuration file may be in a different location!)
+	sudo vi /etc/mysql/my.cnf
+(directories and memory allocations are, obviously, machine-dependent)
+	[mysqld]
+	# GENERAL #
+	server-id = 12345
+	
+	# BINARY LOGGING #
+	log-bin = /var/lib/mysql/mysql-bin
+	expire-logs-days = 14
+	sync-binlog = 1
+	
+	# CACHES AND LIMITS #
+	tmp-table-size = 32M
+	max-heap-table-size = 32M
+	query-cache-type = 0
+	query-cache-size = 0
+	max-connections = 50
+	thread-cache-size = 16
+	open-files-limit = 65535
+	table-definition-cache = 1024
+	table-open-cache = 2048
+	
+	# INNODB #
+	innodb-flush-method = O_DIRECT
+	innodb-log-files-in-group = 2
+	innodb-log-file-size = 512M
+	innodb-flush-log-at-trx-commit = 2
+	innodb-file-per-table = 1
+	innodb-buffer-pool-size = 2G
+	
+	# LOGGING #
+	log-error = /var/lib/mysql/mysql-error.log
+	log-queries-not-using-indexes = 1
+	slow-query-log = 1
+	slow-query-log-file = /var/lib/mysql/mysql-slow.log
 
 
 * Update Ubuntu AppArmor (if loading data without the "local" option):
@@ -46,7 +86,7 @@
 
 
 * Create table
-create table if not exists pcap_data (
+create table if not exists maccdc_2012 (
 	protocol tinyint unsigned not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
 	time real not null,
 	ts datetime(6) GENERATED ALWAYS AS (from_unixtime(time)) VIRTUAL,
@@ -73,18 +113,66 @@ create table if not exists pcap_data (
 );
 
 
+* Create table (raw)
+create table if not exists nccdc_2015 (
+	protocol tinyint unsigned not null COMMENT '1=ICMP, 6=TCP, 17=UDP',
+	time real not null,
+	src bigint not null,
+	dst bigint not null,
+	src_port smallint unsigned null,
+	dst_port smallint unsigned null,
+	ttl smallint unsigned not null,
+	length smallint unsigned not null,
+	fragment smallint unsigned not null,
+	flags smallint unsigned null COMMENT 'Bit field: 1=FIN, 2=SYN, 4=RST, 8=PSH, 16=ACK, 32=URG',
+        syn tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&2 = 2, 1, 0)) STORED,
+        ack tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&16 = 16, 1, 0)) STORED,
+        rst tinyint unsigned GENERATED ALWAYS AS (if(ifnull(flags,0)&4 = 4, 1, 0)) STORED
+);
+
+
+* Add generated columns
+	alter table nccdc_2015 add ts datetime(6) GENERATED ALWAYS AS (from_unixtime(time)) VIRTUAL;
+	alter table nccdc_2015 add src_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(src)) VIRTUAL;
+	alter table nccdc_2015 add dst_ip varchar(20) GENERATED ALWAYS AS (inet_ntoa(dst)) VIRTUAL;
+
+
+* Add indices
+	create INDEX ind_time on nccdc_2015 (time);
+	create INDEX ind_src on nccdc_2015 (src, src_port);
+	create INDEX ind_dst on nccdc_2015 (dst, dst_port);
+	create INDEX ind_syn on nccdc_2015 (syn);
+	create INDEX ind_ack on nccdc_2015 (ack);
+	create INDEX ind_rst on nccdc_2015 (rst);
+	create INDEX ind_protocol on nccdc_2015 (protocol);
+
+
 * Local table from local fifo/pipe file
 (Connected to mysql client)
-load data local infile '/tmp/nccdc_2015.dat' into table pcap_data
+
+set @@session.sql_log_bin=0;
+set sql_log_bin=0;
+set unique_checks = 0;
+set foreign_key_checks = 0;
+set autocommit = 0;
+load data local infile '/tmp/nccdc_2015.csv' into table nccdc_2015
 	fields terminated by ','
 	lines terminated by '\n'
 	(@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f)
 	set flags = nullif(@f, ''), \
 	src_port = nullif(@sp, '??'), \
 	dst_port = nullif(@dp, '??');
+commit;
+
 
 (separate terminal)
-	cat /tmp/data/2015/processed/csv/*.csv > /tmp/nccdc.dat
+        cat /tmp/data/2015/processed/csv/*.csv > /tmp/nccdc_2015.csv
+
+* split file and load in chunks - can speed up data loading
+        pt-fifo-split --statistics --lines 1000000 maccdc_2012.csv
+
+(separate terminal)
+        MYSQL_PWD=******; while [ -e /tmp/pt-fifo-split ]; do mysql -u mlresearch -p${MYSQL_PWD} -D pcap_data -e "set @@session.sql_log_bin=0; set unique_checks = 0; set foreign_key_checks = 0; set sql_log_bin=0; set autocommit = 0; load data local infile '/tmp/pt-fifo-split' into table maccdc_2012 fields terminated by ',' lines terminated by '\n' (@dummy, protocol, time, src, dst, @sp, @dp, ttl, length, fragment, @f) set flags = nullif(@f, ''), src_port = nullif(@sp, '??'), dst_port = nullif(@dp, '??'); commit ;"; done
 
 
 
