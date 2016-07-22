@@ -2,46 +2,48 @@ var request = require('request');
 var random = require("random-js")();
 var host = "http://localhost:8080"
 var express = require('express');
-var app = express();
-// var http = require('http');
-const PORT=8888; 
+
+const updPort = 4000;
+const httpPort=8888; 
+const dgram = require('dgram');
 var pingerCount = 0;
 var attackCount = 0;
+var app = express();
+const milliseconds = 0.1 
 
+
+/**
+* HTTP attack url.
+*/
 app.get('/attackme', function (req, res) {
+	delay(milliseconds);
 	attackCount++;
   	res.send('thank you for attacking, please come again.');
 });
 
+/**
+* Simple URL end point to count the number of connects made over HTTP and UDP.
+*/
 app.get('/attackcount', function (req, res) {
   res.send(
   		'attackme has been accessed ' + attackCount + ' times <br/>'
   	);
 });
 
+/**
+* Service provides simple states on number of requests made to NGINX server.
+*/
 app.get('/', function (req, res) {
   res.send(
   		'Pinger has made ' + pingerCount + ' requests to the server '+ host +'<br/>'
   	);
 });
 
-app.listen(PORT, function () {
-  console.log('server started on port '+ PORT);
+app.listen(httpPort, function () {
+  console.log('http server started on port '+ httpPort);
+  console.log('udp server started on port '+ updPort);
+
 });
-
-/*
-Test
-*/
-
-
-// function handleRequest(request, response){
-//     response.end('Pinger has made ' + i + ' requests to the server '+ host);
-// }
-// var server = http.createServer(handleRequest);
-// server.listen(PORT, function(){
-//     //Callback triggered when server is successfully listening. Hurray!
-//     console.log("Server listening on: http://localhost:%s", PORT);
-// });
 
 function httpRequest(callback){
 	pingerCount++;
@@ -57,6 +59,11 @@ function httpRequest(callback){
 	
 };
 
+function delay(seconds){
+	var delay = new Date().getTime() + (seconds * 1000);
+	while (new Date().getTime() <= delay) {}
+}
+
 function queryNginx(){
     httpRequest(function () {
     	setTimeout (queryNginx, random.integer(1, 100)) //queue for next ping in the next predefined interval
@@ -69,4 +76,20 @@ function main(){
 	 queryNginx();
 };
 
+
+/**
+* UDP server, sends attacks on any url.
+*/
+// Listen for emission of the "message" event.
+var server = dgram.createSocket('udp4');
+
+server.on('message', function (message) {
+	delay(milliseconds);
+    attackCount++;
+});
+
+server.bind(updPort);
+
+
+//Start processes.
 main();
