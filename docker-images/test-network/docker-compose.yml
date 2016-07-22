@@ -1,17 +1,42 @@
 version: '2'
+
 services:
-  nginx-server:
-    build: ./../nginx-webserver
-#    ports: 
-#        - "8080:80"
-  nodejs-server:
+  nodejs:
     build: ./../nodejs-webserver
+    networks:
+      app_net:
+        ipv4_address: 172.10.0.2
     ports:
-        - "8888:8888"
-#  attacker:
-#    build: ./../ubuntu-ddos
-#  scanner:
-#    build: ./../ubuntu-port-scanner
+     - "8888:8888"
+  attacker:
+    build: ./../ubuntu-ddos
+    networks:
+      app_net:
+        ipv4_address: 172.10.0.3
+    depends_on:
+     - nodejs
+  scanner:
+    build: ./../ubuntu-port-scanner
+    networks:
+      app_net:
+        ipv4_address: 172.10.0.4
+    depends_on:
+     - nodejs
   probe:
     build: ./../ubuntu-probe
+    networks:
+      app_net:
+        ipv4_address: 172.10.0.5
+    depends_on:
+     - nodejs
+     - attacker
+     - scanner
 
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.10.0.0/16
+        gateway: 172.10.0.1
