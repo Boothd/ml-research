@@ -48,9 +48,6 @@ app.listen(httpPort, function () {
 function httpRequest(callback){
 	pingerCount++;
 	request(host, function (error, response, body) {
-	  if (error || response.statusCode != 200)
-	  	console.log(error)
-
 	  if(callback)
 		callback();
 	})
