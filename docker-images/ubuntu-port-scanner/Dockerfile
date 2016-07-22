@@ -14,8 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # get latest port_scanner script
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/port_scanner.py \
   && chmod +x port_scanner.py \
-  && mkdir /log
+  && mkdir /log \
   && apt-get purge -y wget && apt-get autoremove -y
-
 COPY logging.yaml /config/
 
