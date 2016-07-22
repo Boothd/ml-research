@@ -9,13 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           nmap \
           python3 \
           python3-nmap \
+          python3-yaml \
   && rm -rf /var/lib/apt/lists/* \
 # get latest port_scanner script
   && wget https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/port_scanner.py \
   && chmod +x port_scanner.py \
+  && mkdir /log
   && apt-get purge -y wget
 
-# setup log and config directories to use host container directory
-VOLUME /log /config
-
+ADD logging.yaml /config/
 
