@@ -23,10 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # configure and install bonesi
   && cd bonesi-master \
   && chmod +x configure \
-  && configure \
+  && ./configure \
   && make \
   && make install \
-  && apt-get purge unzip wget
+  && apt-get purge -y unzip wget
 
 # disable rp_filter (desired by BONESI)
 ADD 90-disable-rp_filter.conf /etc/sysctl.d/

@@ -14,5 +14,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && bash ${ANACONDA} \
   && rm ${ANACONDA} \
   && pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/${TF_BINARY} \
-  && apt-get purge wget
+  && apt-get purge -y wget
 
