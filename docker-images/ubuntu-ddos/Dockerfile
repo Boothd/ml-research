@@ -7,12 +7,12 @@ MAINTAINER chris.sampson@naimuri.com
 RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
           wget \
-		  automake \
-		  libpcap \
-		  libpcap-dev \
-		  libnet1 \
-		  libnet1-dev \
-		  unzip \
+          automake \
+          libpcap \
+          libpcap-dev \
+          libnet1 \
+          libnet1-dev \
+          unzip \
   && rm -rf /var/lib/apt/lists/* \
   && mkdir bonesi \
   && wget https://github.com/Markus-Go/bonesi/archive/master.zip -O bonesi/master.zip \

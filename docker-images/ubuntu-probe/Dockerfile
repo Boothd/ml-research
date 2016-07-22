@@ -6,7 +6,6 @@ MAINTAINER chris.sampson@naimuri.com
 RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
 # TODO: determine which is better for our needs - tshark or tcpdump
-		  tshark \
-		  tcpdump \
-		  
-  && rm -rf /var/lib/apt/lists/* \
+          tshark \
+          tcpdump \
+  && rm -rf /var/lib/apt/lists/*
