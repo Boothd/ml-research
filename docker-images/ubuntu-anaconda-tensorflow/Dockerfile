@@ -25,6 +25,6 @@ RUN ${ANACONDA_DIR}/bin/pip install --ignore-installed --upgrade https://storage
 
 # setup image defaults for run
 WORKDIR ${ANACONDA_DIR}
-ENV PATH="${ANCONDA_DIR}/bin:$PATH"
-ENTRYPOINT ["${ANCONDA_DIR}/bin/python3"]
+ENV PATH="${ANACONDA_DIR}/bin:$PATH"
+ENTRYPOINT ["${ANACONDA_DIR}/bin/python3"]
 
