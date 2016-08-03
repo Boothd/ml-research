@@ -1,36 +1,27 @@
 version: '2'
 
 services:
-  nodejs:
-    build: ./../nodejs-webserver
-    networks:
-      app_net:
-        ipv4_address: 172.10.0.2
-    ports:
-     - "8888:8888"
   attacker:
     build: ./../ubuntu-ddos
     networks:
       app_net:
-        ipv4_address: 172.10.0.3
+        ipv4_address: 172.10.0.2
     depends_on:
-     - nodejs
+    - probe
   scanner:
     build: ./../ubuntu-port-scanner
     networks:
       app_net:
-        ipv4_address: 172.10.0.4
+        ipv4_address: 172.10.0.3
     depends_on:
-     - nodejs
+    - probe
   probe:
     build: ./../ubuntu-probe
     networks:
       app_net:
-        ipv4_address: 172.10.0.5
-    depends_on:
-     - nodejs
-     - attacker
-     - scanner
+        ipv4_address: 172.10.0.4
+    ports:
+    - "8888:8888"
 
 networks:
   app_net:
@@ -40,3 +31,4 @@ networks:
       config:
       - subnet: 172.10.0.0/16
         gateway: 172.10.0.1
+
