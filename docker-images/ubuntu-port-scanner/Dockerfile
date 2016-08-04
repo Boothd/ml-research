@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
           wget \
           nmap \
+          dnsutils \
+          inetutils-ping \
           python3 \
           python3-nmap \
           python3-yaml \
@@ -16,5 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && chmod +x port_scanner.py \
   && mkdir /log \
   && apt-get purge -y wget && apt-get autoremove -y
+
+# TODO: situate this on a VOLUME instead so it can be modified outside of the container
 COPY logging.yaml /config/
 

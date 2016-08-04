@@ -8,15 +8,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # TODO: determine which is better for our needs - tshark or tcpdump
           tshark \
           tcpdump \
-  && rm -rf /var/lib/apt/lists/*
+          dnsutils \
+          inetutils-ping \
+          nodejs \
+          curl \
+  && rm -rf /var/lib/apt/lists/* \
+  && mkdir /opt/node/ \
+  && curl -sL https://deb.nodesource.com/setup_6.x | bash - \
+  && apt-get purge -y curl && apt-get autoremove -y
 
-RUN apt-get update
-RUN apt-get install curl
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
-RUN apt-get install -y nodejs
-
-RUN mkdir /opt/node/
 COPY node /opt/node/
 WORKDIR /opt/node/
 RUN npm install
 CMD [ "npm", "start" ]
+
+# TODO: setup a VOLUME so config can be modified outside of the container
+

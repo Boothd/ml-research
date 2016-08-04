@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           libpcap.\..-dev \
           libnet1 \
           libnet1-dev \
+          dnsutils \
+          inetutils-ping \
           wget \
           unzip \
   && rm -rf /var/lib/apt/lists/* \
@@ -30,4 +32,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # disable rp_filter (desired by BONESI)
 COPY 90-disable-rp_filter.conf /etc/sysctl.d/
+
+# TODO: setup a VOLUME so config can be modified outside of the container
 
