@@ -4,8 +4,11 @@ services:
   attacker:
     build: ./../ubuntu-ddos
 #    networks:
-#      app_net
+#      default:
+#        aliases: attacker
+#      app_net:
 #        ipv4_address: 172.10.0.2
+#        aliases: probe
     links:
     - probe
 # TODO: add VOLUMEs for config/logging
@@ -13,8 +16,11 @@ services:
   scanner:
     build: ./../ubuntu-port-scanner
 #    networks:
+#      default:
+#        aliases: scanner
 #      app_net:
 #        ipv4_address: 172.10.0.3
+#        aliases: probe
     links:
     - probe
 # TODO: add VOLUMEs for config/logging
@@ -22,8 +28,11 @@ services:
   probe:
     build: ./../ubuntu-probe
 #    networks:
+#      default:
+#        aliases: probe
 #      app_net:
 #        ipv4_address: 172.10.0.4
+#        aliases: probe
     ports:
     - "8888:8888"
 # TODO: add VOLUMEs for code/logging
