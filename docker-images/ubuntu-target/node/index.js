@@ -8,6 +8,10 @@ var udpCount = 0;
 var app = express();
 const milliseconds = 0.1 
 
+function delay(seconds){
+	var delay = new Date().getTime() + (seconds * 1000);
+	while (new Date().getTime() <= delay) {}
+}
 
 // Listen for emission of the UDP "message" event.
 var server = dgram.createSocket('udp4');
