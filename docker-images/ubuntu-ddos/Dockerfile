@@ -34,9 +34,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY 90-disable-rp_filter.conf /etc/sysctl.d/
 
 # add volumes to control config and see logs outside of container
-COPY config/* /bonesi-master/config
+COPY config/* /bonesi-master/config/
 VOLUME [ "/log", "/bonesi-master/config" ]
 
 # by default, launch into bonesi (requires at least the target to be specified at runtime)
-ENTRYPOINT [ "bonesi", "--protocol=tcp", "--ips=/bonesi-master/config/bots.txt", "--url_list=/bonesi-master/config/urllist.txt", "--useragent_file=/bonesi-master/config/browserlist.txt" ]
+ENTRYPOINT [ "bonesi", "-i", "/bonesi-master/config/bots.txt", "-l", "/bonesi-master/config/urllist.txt", "-b", "/bonesi-master/config/browserlist.txt" ]
 
