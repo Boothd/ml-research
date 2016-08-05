@@ -3,6 +3,9 @@ version: '2'
 services:
   attacker:
     build: ../ubuntu-ddos
+    volumes:
+    - ../volumes/log:/log
+    - ../volumes/config:/bonesi-master/config
     links:
     - target
     tty: true
@@ -10,6 +13,9 @@ services:
 
   scanner:
     build: ../ubuntu-port-scanner
+    volumes:
+    - ../volumes/log:/log
+    - ../volumes/config:/config
     links:
     - target
     tty: true
@@ -17,6 +23,8 @@ services:
 
   pinger:
     build: ../ubuntu-pinger
+    volumes:
+    - ../volumes/node/target:/opt/node
     links:
     - target
     ports:
@@ -24,6 +32,9 @@ services:
 
   target:
     build: ../ubuntu-target
+    volumes:
+    - ../volumes/log:/log
+    - ../volumes/node/target:/opt/node
     ports:
     - "8888:8888"
 

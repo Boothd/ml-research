@@ -25,13 +25,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # configure supervisor daemon
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# setup VOLUME containing the code to be run by nodejs
-VOLUME ./node:/opt/node/
+# copy code to be run by nodejs
+COPY node/* /opt/node/
 WORKDIR /opt/node/
 RUN npm install
 
-# add volume to see logs outside of container
-VOLUME ../log:/log
+# add volume to see logs and code outside of container
+VOLUME [ "/log", "/opt/node" ]
 
 # start NodeJS and tcpdump using supervisord
 CMD [ "/usr/bin/supervisord" ]

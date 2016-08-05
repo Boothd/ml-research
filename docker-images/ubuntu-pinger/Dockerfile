@@ -18,11 +18,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && mkdir /opt/node/ /var/log/supervisor/ \
   && apt-get purge -y wget && apt-get autoremove -y
 
-# setup VOLUME containing the code to be run by nodejs
-VOLUME ./node:/opt/node/
+# copy code to be run by nodejs
+COPY node/* /opt/node/
 WORKDIR /opt/node/
 RUN npm install
 
-# start NodeJS and tcpdump using supervisord
+# add volume to see code outside of container
+VOLUME [ "/opt/node" ]
+
+# start NodeJS
 CMD [ "npm", "start" ]
 

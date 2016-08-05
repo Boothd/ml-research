@@ -16,12 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # get latest port_scanner script
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/port_scanner.py \
   && chmod +x port_scanner.py \
-  && mkdir /log \
+  && mkdir /log /config \
   && apt-get purge -y wget && apt-get autoremove -y
 
 # add volumes to control config and see logs outside of container
-VOLUME ./config:/config
-VOLUME ../log:/log
+COPY config/* config/
+VOLUME [ "/log", "/config" ]
 
 # by default, launch into nmap (requires at least the target to be specified at runtime)
 ENTRYPOINT [ "nmap", "-oN", "/log/nmap.log" ]
