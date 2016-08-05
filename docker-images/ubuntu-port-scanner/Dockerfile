@@ -19,6 +19,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && mkdir /log \
   && apt-get purge -y wget && apt-get autoremove -y
 
-# TODO: situate this on a VOLUME instead so it can be modified outside of the container
-COPY logging.yaml /config/
+# add volumes to control config and see logs outside of container
+VOLUME ./config:/config
+VOLUME ../log:/log
+
+# by default, launch into nmap (requires at least the target to be specified at runtime)
+ENTRYPOINT [ "nmap", "-oN", "/log/nmap.log" ]
 

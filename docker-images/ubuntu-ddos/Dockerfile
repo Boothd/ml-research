@@ -33,5 +33,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # disable rp_filter (desired by BONESI)
 COPY 90-disable-rp_filter.conf /etc/sysctl.d/
 
-# TODO: setup a VOLUME so config can be modified outside of the container
+# add volumes to control config and see logs outside of container
+VOLUME ./config:/config
+VOLUME ../log:/log
+
+# by default, launch into bonesi (requires at least the target to be specified at runtime)
+ENTRYPOINT [ "bonesi", "--ips=/config/bots.txt", "--protocol=tcp", "--url_list=urllist.txt", "--useragent_file=browserlist.txt" ]
 

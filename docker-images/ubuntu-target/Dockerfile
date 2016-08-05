@@ -12,19 +12,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           tcpdump \
           dnsutils \
           inetutils-ping \
+          supervisor \
           wget \
   && rm -rf /var/lib/apt/lists/* \
   && wget -nv https://deb.nodesource.com/${NODE_SETUP} \
   && bash ${NODE_SETUP} \
   && apt-get install -y --no-install-recommends nodejs \
   && rm ${NODE_SETUP} \
-  && mkdir /opt/node/ \
+  && mkdir /opt/node/ /var/log/supervisor/ \
   && apt-get purge -y wget && apt-get autoremove -y
 
-# TODO: setup a VOLUME so config can be modified outside of the container
+# configure supervisor daemon
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-COPY node /opt/node/
+# setup VOLUME containing the code to be run by nodejs
+VOLUME ./node:/opt/node/
 WORKDIR /opt/node/
 RUN npm install
-CMD [ "npm", "start" ]
+
+# add volume to see logs outside of container
+VOLUME ../log:/log
+
+# start NodeJS and tcpdump using supervisord
+CMD [ "/usr/bin/supervisord" ]
 

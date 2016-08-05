@@ -3,46 +3,27 @@ version: '2'
 services:
   attacker:
     build: ./../ubuntu-ddos
-#    networks:
-#      default:
-#        aliases: attacker
-#      app_net:
-#        ipv4_address: 172.10.0.2
-#        aliases: probe
     links:
-    - probe
-# TODO: add VOLUMEs for config/logging
+    - target
+    tty: true
+    stdin_open: true
 
   scanner:
     build: ./../ubuntu-port-scanner
-#    networks:
-#      default:
-#        aliases: scanner
-#      app_net:
-#        ipv4_address: 172.10.0.3
-#        aliases: probe
     links:
-    - probe
-# TODO: add VOLUMEs for config/logging
+    - target
+    tty: true
+    stdin_open: true
 
-  probe:
-    build: ./../ubuntu-probe
-#    networks:
-#      default:
-#        aliases: probe
-#      app_net:
-#        ipv4_address: 172.10.0.4
-#        aliases: probe
+  pinger:
+    build: ./../ubuntu-pinger
+    links:
+    - target
+    ports:
+    - "8080:8080"
+
+  target:
+    build: ./../ubuntu-target
     ports:
     - "8888:8888"
-# TODO: add VOLUMEs for code/logging
-
-#networks:
-#  app_net:
-#    driver: bridge
-#    ipam:
-#      driver: default
-#      config:
-#      - subnet: 172.10.0.0/16
-#        gateway: 172.10.0.1
 
