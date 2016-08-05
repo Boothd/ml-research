@@ -231,24 +231,28 @@ def to_string(ip):
 
 def main():
 	
-	csvFileName = sys.argv[1];
-	#hostIpsArray = sys.argv[2];
-	
-	print("Creating training set");
-	clf = createTrainingSet('sample.csv');
+	if(sys.version_info > (3,0)):
+		print("Script has detected that the python version is 3 or greater. "+
+			"Please use python version 2.7 and Anaconda 2.4.1");
+	else: 
+		csvFileName = sys.argv[1];
+		#hostIpsArray = sys.argv[2];
+		
+		print("Creating training set");
+		clf = createTrainingSet('sample.csv');
 
-	print("Processing: "+csvFileName);
-	dayone21Hash = csvToHashMapNoHeaders(csvFileName);
-	featureArray = hashMapToFeatureArray(dayone21Hash);
+		print("Processing: "+csvFileName);
+		dayone21Hash = csvToHashMapNoHeaders(csvFileName);
+		featureArray = hashMapToFeatureArray(dayone21Hash);
 
-	print("Prediction port scans.");
-	prediction = clf.predict(featureArray[1]);
-	#print(prediction);
-	#print(clf.predict_proba(featureArray))
+		print("Prediction port scans.");
+		prediction = clf.predict(featureArray[1]);
+		#print(prediction);
+		#print(clf.predict_proba(featureArray))
 
-	print("The following IP's are possible port scans.");
-	for index, val in enumerate(prediction):
-		if val == 1:
-			print(str(featureArray[0][index])+" : "+to_string(featureArray[0][index]));
+		print("The following IP's are possible port scans.");
+		for index, val in enumerate(prediction):
+			if val == 1:
+				print(str(featureArray[0][index])+" : "+to_string(featureArray[0][index]));
 
 main();
