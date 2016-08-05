@@ -21,11 +21,6 @@ function httpRequest(callback){
 	})
 };
 
-function delay(seconds){
-	var delay = new Date().getTime() + (seconds * 1000);
-	while (new Date().getTime() <= delay) {}
-}
-
 function queryTarget(){
 	httpRequest(function () {
 		setTimeout (queryTarget, random.integer(1, 100)) //queue for next ping in the next predefined interval

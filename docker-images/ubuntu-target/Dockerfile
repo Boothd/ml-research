@@ -34,5 +34,5 @@ RUN npm install
 VOLUME [ "/log", "/opt/node" ]
 
 # start NodeJS and tcpdump using supervisord
-CMD [ "/usr/bin/supervisord" ]
+CMD [ "/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 
