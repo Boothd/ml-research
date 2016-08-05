@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && bash ${NODE_SETUP} \
   && apt-get install -y --no-install-recommends nodejs \
   && rm ${NODE_SETUP} \
-  && mkdir /opt/node/ /var/log/supervisor/ \
+  && mkdir /opt/node/ \
   && apt-get purge -y wget && apt-get autoremove -y
 
 # configure supervisor daemon

@@ -2,28 +2,28 @@ version: '2'
 
 services:
   attacker:
-    build: ./../ubuntu-ddos
+    build: ../ubuntu-ddos
     links:
     - target
     tty: true
     stdin_open: true
 
   scanner:
-    build: ./../ubuntu-port-scanner
+    build: ../ubuntu-port-scanner
     links:
     - target
     tty: true
     stdin_open: true
 
   pinger:
-    build: ./../ubuntu-pinger
+    build: ../ubuntu-pinger
     links:
     - target
     ports:
     - "8080:8080"
 
   target:
-    build: ./../ubuntu-target
+    build: ../ubuntu-target
     ports:
     - "8888:8888"
 
