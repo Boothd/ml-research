@@ -8,7 +8,7 @@ ENV SKLEARN_VERSION 0.16.1
 
 # install anaconda
 ENV ANACONDA_VERSION=Anaconda2-4.1.1-Linux-x86_64
-ENV ANACONDA_DIR=/pot/anaconda2
+ENV ANACONDA_DIR=/opt/anaconda2
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificates \

@@ -4,7 +4,7 @@ MAINTAINER chris.sampson@naimuri.com
 
 # install anaconda
 ENV ANACONDA=Anaconda3-4.1.1-Linux-x86_64.sh
-ENV ANACONDA_DIR=/anaconda3
+ENV ANACONDA_DIR=/opt/anaconda3
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
@@ -24,7 +24,7 @@ RUN ${ANACONDA_DIR}/bin/pip install --ignore-installed --upgrade https://storage
 
 
 # setup image defaults for run
-WORKDIR ${ANACONDA_DIR}
+WORKDIR ${ANACONDA_DIR}/bin
 ENV PATH="${ANACONDA_DIR}/bin:$PATH"
 ENTRYPOINT ["${ANACONDA_DIR}/bin/python3"]
 
