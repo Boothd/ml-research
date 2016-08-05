@@ -5,8 +5,8 @@ services:
     build: ../ubuntu-ddos
     container_name: attacker
     volumes:
-    - ./log:/log
-    - ./config:/bonesi-master/config
+    - log:/log
+    - config:/bonesi-master/config
     links:
     - target
     tty: true
@@ -16,8 +16,8 @@ services:
     build: ../ubuntu-port-scanner
     container_name: scanner
     volumes:
-    - ./log:/log
-    - ./config:/config
+    - log:/log
+    - config:/config
     links:
     - target
     tty: true
@@ -26,20 +26,26 @@ services:
 # using container_name and/or exposed ports will prevent pinger from being scalable
   pinger:
     build: ../ubuntu-pinger
-#    container_name: pinger
+    container_name: pinger
     volumes:
-    - ./node-pinger:/opt/node
+    - node-pinger:/opt/node
     links:
     - target
-#    ports:
-#    - "8080:8080"
+    ports:
+    - "8866:8866"
 
   target:
     build: ../ubuntu-target
     container_name: target
     volumes:
-    - ./log:/log
-    - ./node-target:/opt/node
+    - log:/log
+    - node-target:/opt/node
     ports:
     - "8888:8888"
+
+volumes:
+  config:
+  log:
+  node-pinger:
+  node-target:
 

@@ -2,9 +2,9 @@ var request = require('request');
 var random = require("random-js")();
 var express = require('express');
 
-const httpPort=8866;
-
-var host = "http://target:" + httpPort;
+const listenPort=8866;
+const httpPort=8888;
+var url = "http://target:" + httpPort + "/attackme";
 var pingerCount = 0;
 var app = express();
 
@@ -12,16 +12,16 @@ var app = express();
 * Service provides simple states on number of requests made to target server.
 */
 app.get('/', function (req, res) {
-	res.send('Pinger has made ' + pingerCount + ' requests to the server ' + host);
+	res.send('Pinger has made ' + pingerCount + ' requests to the URL ' + url);
 });
 
-app.listen(httpPort, function () {
-  console.log('http server started on port '+ httpPort);
+app.listen(listenPort, function () {
+  console.log('http server started on port '+ listenPort);
 });
 
 function httpRequest(callback){
 	pingerCount++;
-	request(host, function (error, response, body) {
+	request(url, function (error, response, body) {
 	  if(callback)
 		callback();
 	})
@@ -35,7 +35,7 @@ function queryTarget(){
 
 function main(){
 	console.log("Starting nodejs ping processor.");
-	console.log("Pinging: " + host);
+	console.log("Pinging: " + url);
 	queryTarget();
 };
 

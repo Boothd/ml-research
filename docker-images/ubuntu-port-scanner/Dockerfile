@@ -5,7 +5,6 @@ MAINTAINER chris.sampson@naimuri.com
 # install python, nmap and port_scanner script
 RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
-          wget \
           nmap \
           dnsutils \
           inetutils-ping \
@@ -13,16 +12,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           python3-nmap \
           python3-yaml \
   && rm -rf /var/lib/apt/lists/* \
-# get latest port_scanner script
-  && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/port_scanner.py \
-  && chmod +x port_scanner.py \
   && mkdir /log /config \
-  && apt-get purge -y wget && apt-get autoremove -y
+  && apt-get autoremove -y
+
+# add the port_scanner script and config
+COPY port_scanner.py /
+COPY config/* config/
 
 # add volumes to control config and see logs outside of container
-COPY config/* config/
 VOLUME [ "/log", "/config" ]
 
-# by default, launch into nmap (requires at least the target to be specified at runtime)
-ENTRYPOINT [ "nmap", "-oN", "/log/nmap.log" ]
+# by default, launch into python_scanner (requires at least the target to be specified at runtime, "-t target")
+ENTRYPOINT [ "/port_scanner.py" ]
 
