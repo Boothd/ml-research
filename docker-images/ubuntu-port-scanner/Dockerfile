@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # add the port_scanner script and config
 COPY port_scanner.py /
+RUN chmod +x port_scanner.py
 COPY config/* config/
 
 # add volumes to control config and see logs outside of container
