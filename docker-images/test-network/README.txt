@@ -12,10 +12,14 @@ Installer docker-compose-ui (for ease of monitoring and managing network; run fr
 
 Find your docker volumes containing config/log/code files
 	sudo docker volume ls
-	sodo docker volume inspect testnetwork_log
-	sodo docker volume inspect testnetwork_config
-	sodo docker volume inspect testnetwork_node-target
-	sodo docker volume inspect testnetwork_node-pinger
+	sudo docker volume inspect testnetwork_log
+
+	sudo docker volume inspect testnetwork_target-node
+	sudo docker volume inspect testnetwork_pinger-node
+
+	sudo docker volume inspect testnetwork_analyser-config
+	sudo docker volume inspect testnetwork_attacker-config
+	sudo docker volume inspect testnetwork_scanner-config
 
 
 Launch an nmap port scan at the target, e.g. for UDP against port 4000
@@ -27,7 +31,7 @@ Launch a BoNeSi attack at the target, e.g. using UDP against port 4000
 
 
 Launch an analyser container
-	sudo docker-compose run -it analyser
+	sudo docker-compose run analyser
 
 
 URLs for monitoring activity:

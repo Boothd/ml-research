@@ -16,8 +16,8 @@ services:
     build: ../ubuntu-port-scanner
     container_name: scanner
     volumes:
-    - log:/log
-    - scanner-config:/config
+    - log:/usr/local/sbin/log
+    - scanner-config:/usr/local/sbin/config
     links:
     - target
     tty: true
