@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && bash ${NODE_SETUP} \
   && apt-get install -y --no-install-recommends nodejs \
   && rm ${NODE_SETUP} \
-  && mkdir /opt/node/ \
+  && mkdir /log /opt/node/ \
   && apt-get purge -y wget && apt-get autoremove -y
 
 # copy code to be run by nodejs
@@ -24,8 +24,10 @@ WORKDIR /opt/node/
 RUN npm install
 
 # add volume to see code outside of container
-VOLUME [ "/opt/node" ]
+VOLUME [ "/log", "/opt/node" ]
+
+# expose port to host for to allow viewing of NodeJS logs
+EXPOSE 8866
 
 # start NodeJS
 CMD [ "npm", "start" ]
-

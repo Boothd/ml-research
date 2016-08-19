@@ -19,7 +19,7 @@ Find your docker volumes containing config/log/code files
 
 
 Launch an nmap port scan at the target, e.g. for UDP against port 4000
-	sudo docker-compose run scanner -sU -p 4000 target
+	sudo docker-compose run scanner --min-port=3999 --max-port=4001 -r --nmap-opts="-sU" -t target
 
 
 Launch a BoNeSi attack at the target, e.g. using UDP against port 4000

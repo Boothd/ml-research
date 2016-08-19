@@ -22,20 +22,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           tcpdump \
           parallel \
           bzip2 \
+		  python3-qt4 \
   && rm -rf /var/lib/apt/lists/* \
+  && mkdir /usr/local/sbin/log /usr/local/sbin/config /usr/local/sbin/scripts \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/pcap_to_csv.py -P /usr/local/sbin/ \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/csv_to_graph.py -P /usr/local/sbin/ \
-  && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/scripts/parallel_convert_pcap_files.sh -P /usr/local/sbin/ \
-  && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/scripts/parallel_graph_csv_files.sh -P /usr/local/sbin/ \
-  && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/scripts/sort_and_split_csv_files_by_dst_ip.sh -P /usr/local/sbin/ \
-  && chmod +x /usr/local/sbin/* \
-  && mkdir /log /config
+  && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/scripts/parallel_convert_pcap_files.sh -P /usr/local/sbin/scripts/ \
+  && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/scripts/parallel_graph_csv_files.sh -P /usr/local/sbin/scripts/ \
+  && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/scripts/sort_and_split_csv_files_by_dst_ip.sh -P /usr/local/sbin/scripts/ \
+  && chmod -R +x /usr/local/sbin/*
 
 # add the config
-COPY config/* config/
+COPY config/* /usr/local/sbin/config/
 
 # add volumes to control config and see logs outside of container
-VOLUME [ "/log", "/config" ]
+VOLUME [ "/usr/local/sbin/log", "/usr/local/sbin/config" ]
 
 
 # download and install anaconda

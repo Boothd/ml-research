@@ -33,6 +33,9 @@ RUN npm install
 # add volume to see logs and code outside of container
 VOLUME [ "/log", "/opt/node" ]
 
+# expose ports to listen for network traffic
+EXPOSE 8888
+
 # start NodeJS and tcpdump using supervisord
 CMD [ "/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
 

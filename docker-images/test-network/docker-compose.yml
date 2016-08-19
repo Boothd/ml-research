@@ -6,7 +6,7 @@ services:
     container_name: attacker
     volumes:
     - log:/log
-    - config:/bonesi-master/config
+    - attacker-config:/bonesi-master/config
     links:
     - target
     tty: true
@@ -17,35 +17,44 @@ services:
     container_name: scanner
     volumes:
     - log:/log
-    - config:/config
+    - scanner-config:/config
     links:
     - target
     tty: true
     stdin_open: true
 
-# using container_name and/or exposed ports will prevent pinger from being scalable
+# using container_name and/or exposed ports connected to specific host ports will prevent pinger from being scalable
   pinger:
     build: ../ubuntu-pinger
-    container_name: pinger
+    #container_name: pinger
     volumes:
-    - node-pinger:/opt/node
+    - log:/log
+    - pinger-node:/opt/node
     links:
     - target
     ports:
-    - "8866:8866"
+    - "8866"
 
   target:
     build: ../ubuntu-target
     container_name: target
     volumes:
     - log:/log
-    - node-target:/opt/node
+    - target-node:/opt/node
     ports:
     - "8888:8888"
 
+  analyser:
+    build: ../ubuntu-anaconda-scapy
+    container_name: target
+    volumes:
+    - log:/usr/local/sbin/log
+    - analyser-config:/usr/local/sbin/config
+
 volumes:
-  config:
   log:
   node-pinger:
   node-target:
-
+  analyser-config:
+  attacker-config:
+  scanner-config:
