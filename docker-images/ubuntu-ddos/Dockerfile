@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && unzip master.zip \
   && rm master.zip \
 # configure and install bonesi
-  && cd bonesi-master \
+  && cd /bonesi-master \
   && chmod +x configure \
   && ./configure \
   && make \
@@ -38,5 +38,5 @@ COPY config/* /bonesi-master/config/
 VOLUME [ "/log", "/bonesi-master/config" ]
 
 # by default, launch into bonesi (requires at least the target to be specified at runtime)
-ENTRYPOINT [ "bonesi", "-i", "/bonesi-master/config/bots.txt", "-l", "/bonesi-master/config/urllist.txt", "-b", "/bonesi-master/config/browserlist.txt" ]
+ENTRYPOINT [ "bonesi", "-o", "/log/bonesi_stats.log", "-i", "/bonesi-master/config/bots.txt", "-l", "/bonesi-master/config/urllist.txt", "-b", "/bonesi-master/config/browserlist.txt" ]
 

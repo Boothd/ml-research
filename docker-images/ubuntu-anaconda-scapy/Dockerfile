@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		  python3-pyqt4 \
   && rm -rf /var/lib/apt/lists/* \
   && mkdir /usr/local/sbin/log /usr/local/sbin/config /usr/local/sbin/scripts \
+  && ln -s /usr/local/sbin/log /log \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/pcap_to_csv.py -P /usr/local/sbin/ \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/csv_to_graph.py -P /usr/local/sbin/ \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/scripts/parallel_convert_pcap_files.sh -P /usr/local/sbin/scripts/ \
@@ -49,9 +50,9 @@ RUN bash /${ANACONDA} -b -p ${ANACONDA_DIR} \
 RUN ${ANACONDA_DIR}/bin/pip install --ignore-installed --upgrade ${SCAPY}
 
 
-# setup image defaults to start in the anaconda directory
-WORKDIR ${ANACONDA_DIR}/bin
-ENV PATH="${ANACONDA_DIR}/bin:/usr/local/sbin:$PATH"
+# setup image defaults to start in the python scripts directory
+WORKDIR /usr/local/sbin/
+ENV PATH="${ANACONDA_DIR}/bin:/usr/local/sbin:/usr/local/sbin/scripts:$PATH"
 
 # setup with bash CLI
 ENTRYPOINT [ "/bin/bash" ]
