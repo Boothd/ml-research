@@ -1,4 +1,5 @@
 var request = require('request');
+var os = require('os');
 var random = require("random-js")();
 var express = require('express');
 
@@ -27,9 +28,27 @@ function httpRequest(callback){
 	})
 };
 
+function httpPost(callback){
+	request({
+			method: 'POST',
+			json: true,
+			headers: {'content-type' : 'application/json'},
+  			url:     url,
+  			body:    {counter: pingerCount, host: os.hostname()}
+		},
+		function(error, response, body){
+			if(callback)
+				callback();
+		});
+	pingerCount++;
+}
+
 function queryTarget(){
-	httpRequest(function () {
-		setTimeout (queryTarget, random.integer(1, 100)) //queue for next ping in the next predefined interval
+	// httpRequest(function () {
+	// 	setTimeout (queryTarget, random.integer(1, 100)) //queue for next ping in the next predefined interval
+	// });
+	httpPost(function () {
+	 	setTimeout (queryTarget, random.integer(1, 100)) //queue for next ping in the next predefined interval
 	});
 }
 

@@ -10,8 +10,10 @@
   "author": "daniel.booth@naimuri.com",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.15.2",
     "express": "^4.14.0",
     "random-js": "^1.0.8",
-    "request": "^2.73.0"
+    "request": "^2.73.0",
+    "winston": "^2.2.0"
   }
 }
