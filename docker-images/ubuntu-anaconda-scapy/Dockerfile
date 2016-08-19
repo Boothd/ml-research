@@ -53,3 +53,5 @@ RUN ${ANACONDA_DIR}/bin/pip install --ignore-installed --upgrade ${SCAPY}
 WORKDIR ${ANACONDA_DIR}/bin
 ENV PATH="${ANACONDA_DIR}/bin:/usr/local/sbin:$PATH"
 
+# setup with bash CLI
+ENTRYPOINT [ "/bin/bash" ]
