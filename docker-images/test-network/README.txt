@@ -26,6 +26,9 @@ Launch a BoNeSi attack at the target, e.g. using UDP against port 4000
 	sudo docker-compose run attacker --protocol=udp target:4000
 
 
+Launch an analyser container
+	sudo docker-compose run -it analyser
+
 
 URLs for monitoring activity:
 	docker-compose-ui:	http://localhost:5000/

@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           tcpdump \
           parallel \
           bzip2 \
-		  python3-qt4 \
+		  python3-pyqt4 \
   && rm -rf /var/lib/apt/lists/* \
   && mkdir /usr/local/sbin/log /usr/local/sbin/config /usr/local/sbin/scripts \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/pcap_to_csv.py -P /usr/local/sbin/ \

@@ -46,15 +46,15 @@ services:
 
   analyser:
     build: ../ubuntu-anaconda-scapy
-    container_name: target
+    container_name: analyser
     volumes:
     - log:/usr/local/sbin/log
     - analyser-config:/usr/local/sbin/config
 
 volumes:
   log:
-  node-pinger:
-  node-target:
+  pinger-node:
+  target-node:
   analyser-config:
   attacker-config:
   scanner-config:
