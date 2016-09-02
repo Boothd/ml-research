@@ -2,14 +2,16 @@
 
 # create new log directory using a UUID
 uuid=`uuidgen`
-log_dir="run-${uuid}"
-mkdir -p /usr/local/sbin/log/${log_dir}
-
+base_dir=/usr/local/sbin/log 
+current_dir=${base_dir}/current        
+log_dir="${base_dir}/run-${uuid}"      
+mkdir -p ${log_dir}                         
+                                            
 # symlink new UUID log dir for "current" use
-if [ -e /usr/local/sbin/log/current ]
-then
-	rm /usr/local/sbin/log/current
-fi
-ln -s /usr/local/sbin/log/${log_dir} /usr/local/sbin/log/current
-
+if [ -e "${current_dir}" ]                  
+then                                  
+        rm ${current_dir}                                       
+fi                                                              
+ln -s ${log_dir} ${current_dir}                                 
+                                                                
 echo "Current log dir now ${log_dir}"
