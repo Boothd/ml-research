@@ -37,5 +37,4 @@ VOLUME [ "/log", "/opt/node" ]
 EXPOSE 8888
 
 # start NodeJS and tcpdump using supervisord
-CMD [ "/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
-
+ENTRYPOINT [ "/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]

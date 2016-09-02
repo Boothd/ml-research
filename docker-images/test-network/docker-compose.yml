@@ -1,6 +1,13 @@
 version: '2'
 
 services:
+  commander:
+    build: ../alpine-commander
+    container_name: commander
+    volumes:
+    - log:/log
+    tty: true
+
   attacker:
     build: ../ubuntu-ddos
     container_name: attacker
@@ -10,7 +17,6 @@ services:
     links:
     - target
     tty: true
-    stdin_open: true
 
   scanner:
     build: ../ubuntu-port-scanner
@@ -21,7 +27,6 @@ services:
     links:
     - target
     tty: true
-    stdin_open: true
 
 # using container_name and/or exposed ports connected to specific host ports will prevent pinger from being scalable
   pinger:
@@ -33,8 +38,10 @@ services:
     links:
     - target
     ports:
+    # port 8866 will be exposed by container and assigned to a random port on the host machine
     - "8866"
 
+# using container_name and/or exposed ports connected to specific host ports will prevent target from being scalable
   target:
     build: ../ubuntu-target
     container_name: target
@@ -50,6 +57,8 @@ services:
     volumes:
     - log:/usr/local/sbin/log
     - analyser-config:/usr/local/sbin/config
+    tty: true
+    stdin_open: true
 
 volumes:
   log:

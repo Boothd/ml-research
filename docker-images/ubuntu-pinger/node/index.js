@@ -2,12 +2,18 @@ var request = require('request');
 var os = require('os');
 var random = require("random-js")();
 var express = require('express');
+var winston = require('winston');
 
 const listenPort=8866;
 const httpPort=8888;
 var url = "http://target:" + httpPort + "/attackme";
 var pingerCount = 0;
 var app = express();
+var infoJSON = {};
+
+winston.log('info', 'info logger');
+winston.add(winston.transports.File, { filename: '/log/current/nodejs-pinger-' + os.hostname() + '.log' });
+winston.remove(winston.transports.Console);
 
 /**
 * Service provides simple states on number of requests made to target server.
@@ -20,14 +26,6 @@ app.listen(listenPort, function () {
   console.log('http server started on port '+ listenPort);
 });
 
-function httpRequest(callback){
-	pingerCount++;
-	request(url, function (error, response, body) {
-	  if(callback)
-		callback();
-	})
-};
-
 function httpPost(callback){
 	request({
 			method: 'POST',
@@ -39,16 +37,18 @@ function httpPost(callback){
 		function(error, response, body){
 			if(callback)
 				callback();
-		});
+		}
+	);
 	pingerCount++;
+	
+	infoJSON[url] = {counter: pingerCount}
+	console.log(infoJSON); 
+	winston.info(infoJSON);
 }
 
 function queryTarget(){
-	// httpRequest(function () {
-	// 	setTimeout (queryTarget, random.integer(1, 100)) //queue for next ping in the next predefined interval
-	// });
 	httpPost(function () {
-	 	setTimeout (queryTarget, random.integer(1, 100)) //queue for next ping in the next predefined interval
+	 	setTimeout (queryTarget, random.integer(1, 10000)) //queue for next ping in the next predefined interval
 	});
 }
 
@@ -57,7 +57,6 @@ function main(){
 	console.log("Pinging: " + url);
 	queryTarget();
 };
-
 
 // Start pinger processes.
 main();

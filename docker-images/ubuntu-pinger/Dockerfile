@@ -30,4 +30,4 @@ VOLUME [ "/log", "/opt/node" ]
 EXPOSE 8866
 
 # start NodeJS
-CMD [ "npm", "start" ]
+ENTRYPOINT [ "npm", "start" ]
