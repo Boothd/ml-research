@@ -16,4 +16,5 @@ VOLUME [ "/log" ]
 RUN chmod +x /scripts/*
 
 # start new run of the test network
-ENTRYPOINT [ "/bin/sh" "/scripts/start_run.sh" ]
+ENTRYPOINT [ "/bin/sh" ]
+CMD [ "/scripts/start_run.sh" ]
