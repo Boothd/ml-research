@@ -20,7 +20,6 @@ mkdir -p ${log_dir}
 # symlink new UUID log dir for "current" use
 if [[ -e "${current_dir}" ]]
 then
-	echoerr "Removing existing current symlink"
         rm ${current_dir}
 fi
 
