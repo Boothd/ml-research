@@ -18,11 +18,13 @@ ENV SCAPY=scapy-python3
 # install pre-requisites and PCAP/CSV processing scripts
 RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
+          dnsutils \
+          inetutils-ping \
           wget \
           tcpdump \
           parallel \
           bzip2 \
-		  python3-pyqt4 \
+          python3-pyqt4 \
   && rm -rf /var/lib/apt/lists/* \
   && mkdir -p /usr/local/sbin/log /usr/local/sbin/config /usr/local/sbin/scripts \
   && ln -s /usr/local/sbin/log /log \
@@ -53,5 +55,6 @@ RUN ${ANACONDA_DIR}/bin/pip install --ignore-installed --upgrade ${SCAPY}
 WORKDIR /usr/local/sbin/
 ENV PATH="${ANACONDA_DIR}/bin:/usr/local/sbin:/usr/local/sbin/scripts:$PATH"
 
-# setup with bash CLI
-CMD [ "/bin/bash" ]
+# startup with bash CLI
+ENTRYPOINT [ "/bin/bash" ]
+

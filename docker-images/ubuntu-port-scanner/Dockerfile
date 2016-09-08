@@ -6,8 +6,6 @@ MAINTAINER chris.sampson@naimuri.com
 RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
           nmap \
-          dnsutils \
-          inetutils-ping \
           python3 \
           python3-nmap \
           python3-yaml \
@@ -28,5 +26,6 @@ VOLUME [ "/usr/local/sbin/log", "/usr/local/sbin/config" ]
 WORKDIR /usr/local/sbin/
 ENV PATH="/usr/local/sbin:$PATH"
 
-# by default, launch into python_scanner (requires at least the target to be specified at runtime, "-t target")
-ENTRYPOINT [ "python3", "/usr/local/sbin/port_scanner.py", "-t", "target" ]
+# by default, launch into python_scanner (requires at least the target to be specified at runtime)
+ENTRYPOINT [ "python3", "/usr/local/sbin/port_scanner.py" ]
+

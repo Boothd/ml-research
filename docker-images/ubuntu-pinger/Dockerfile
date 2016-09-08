@@ -7,15 +7,13 @@ ENV NODE_SETUP=setup_6.x
 # install nodejs
 RUN apt-get update && apt-get install -y --no-install-recommends \
           software-properties-common \
-          dnsutils \
-          inetutils-ping \
           wget \
-  && rm -rf /var/lib/apt/lists/* \
   && wget -nv https://deb.nodesource.com/${NODE_SETUP} \
   && bash ${NODE_SETUP} \
   && apt-get install -y --no-install-recommends nodejs \
   && rm ${NODE_SETUP} \
   && mkdir /log /opt/node/ \
+  && rm -rf /var/lib/apt/lists/* \
   && apt-get purge -y wget && apt-get autoremove -y
 
 # copy code to be run by nodejs
@@ -31,3 +29,4 @@ EXPOSE 8866
 
 # start NodeJS
 ENTRYPOINT [ "npm", "start" ]
+

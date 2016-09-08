@@ -13,8 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           libpcap.\..-dev \
           libnet1 \
           libnet1-dev \
-          dnsutils \
-          inetutils-ping \
           wget \
           unzip \
   && rm -rf /var/lib/apt/lists/* \
@@ -30,12 +28,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && make install \
   && apt-get purge -y unzip wget && apt-get autoremove -y
 
-# disable rp_filter (desired by BONESI)
-COPY 90-disable-rp_filter.conf /etc/sysctl.d/
-
 # add volumes to control config and see logs outside of container
 COPY config/* /bonesi-master/config/
 VOLUME [ "/log", "/bonesi-master/config" ]
 
 # by default, launch into bonesi (requires at least the target to be specified at runtime)
 ENTRYPOINT [ "bonesi", "-o", "/log/current/bonesi_stats_${HOSTNAME}.log", "-i", "/bonesi-master/config/bots.txt", "-l", "/bonesi-master/config/urllist.txt", "-b", "/bonesi-master/config/browserlist.txt" ]
+
