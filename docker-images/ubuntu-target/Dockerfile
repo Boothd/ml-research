@@ -34,4 +34,3 @@ EXPOSE 8888
 
 # start NodeJS and tcpdump using supervisord
 ENTRYPOINT [ "/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
-
