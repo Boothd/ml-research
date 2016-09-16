@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/* \
   && mkdir -p /usr/local/sbin/log /usr/local/sbin/config /usr/local/sbin/scripts /usr/local/sbin/data /usr/local/sbin/analysis \
   && ln -s /usr/local/sbin/log /log \
+  && ln -s /usr/local/sbin/data /data \
+  && ln -s /usr/local/sbin/analysis /analysis \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/pcap_to_csv.py -P /usr/local/sbin/ \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/csv_to_graph.py -P /usr/local/sbin/ \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/scripts/parallel_convert_pcap_files.sh -P /usr/local/sbin/scripts/ \
