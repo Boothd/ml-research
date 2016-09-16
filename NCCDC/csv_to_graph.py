@@ -359,9 +359,11 @@ def plot_csv_features(csv_file, lower_bounds, output_dir, num_records=None, draw
                     # Time-series subplots for:
                     #    * (scatter) Destination Port connections
                     #    * (line) #connections (with Flags)
-                    #        * (line) #SYN connections
-                    #        * (line) #ACK connections
+                    #        * (line) #SYN (not ACK) connections
+                    #        * (line) #ACK (not SYN or RST) connections
                     #        * (line) #SYN-ACK connections
+					#        * (line) #RST (not ACK) connections
+					#        * (line) #RST-ACK connections
                     #    * (line) #connections (by Type)
                     #        * (line) #TCP connections
                     #        * (line) #ICMP connections

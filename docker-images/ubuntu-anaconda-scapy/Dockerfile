@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
           bzip2 \
           python3-pyqt4 \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /usr/local/sbin/log /usr/local/sbin/config /usr/local/sbin/scripts \
+  && mkdir -p /usr/local/sbin/log /usr/local/sbin/config /usr/local/sbin/scripts /usr/local/sbin/data /usr/local/sbin/analysis \
   && ln -s /usr/local/sbin/log /log \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/pcap_to_csv.py -P /usr/local/sbin/ \
   && wget -nv https://raw.githubusercontent.com/Boothd/ml-research/master/NCCDC/csv_to_graph.py -P /usr/local/sbin/ \
@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY config/* /usr/local/sbin/config/
 
 # add volumes to control config and see logs outside of container
-VOLUME [ "/usr/local/sbin/log", "/usr/local/sbin/config" ]
+VOLUME [ "/usr/local/sbin/log", "/usr/local/sbin/config", "/usr/local/sbin/data", "/usr/local/sbin/analysis" ]
 
 
 # download and install anaconda
@@ -57,4 +57,3 @@ ENV PATH="${ANACONDA_DIR}/bin:/usr/local/sbin:/usr/local/sbin/scripts:$PATH"
 
 # startup with bash CLI
 ENTRYPOINT [ "/bin/bash" ]
-

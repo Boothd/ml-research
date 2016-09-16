@@ -56,12 +56,16 @@ services:
     container_name: analyser
     volumes:
     - log:/usr/local/sbin/log
+    - data:/usr/local/sbin/data
+    - analysis:/usr/local/sbin/analysis
     - analyser-config:/usr/local/sbin/config
     tty: true
     stdin_open: true
 
 volumes:
   log:
+  data:
+  analysis:
   pinger-node:
   target-node:
   analyser-config:

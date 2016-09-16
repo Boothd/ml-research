@@ -18,4 +18,3 @@ RUN chmod +x /scripts/*
 # start new run of the test network
 ENTRYPOINT [ "/bin/sh" ]
 CMD [ "/scripts/start_run.sh" ]
-

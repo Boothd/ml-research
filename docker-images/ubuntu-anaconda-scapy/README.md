@@ -1,60 +1,41 @@
-NCCDC
-=====
+Naimuri Cyber Test Range
+========================
 
-# Overview
+# Analyser
 
-Part of the Naimuri - Machine Learning initiative.
+Docker container to analyse logs and data within the Naimuri Cyber Test Range
 
-Project to parse PCAP data and analyse using Machine Learning algorithms to categorise packets by IP Protocol type.
+## Components
 
-## Data
+### Python 3
 
-Based upon NCCDC "Capture the flag" competition data obtained from PREDICT (https://www.predict.org/Default.aspx?tabid=104) and PCH (https://www.pch.net//resources) for 2014 and 2015 events.
+Python development and execution environment for writing and running scripts to operate with test range data/logs.
 
-## Python Libraries
+### Anaconda 4 with scikit-learn
 
-### Machine Learning
+[scikit-learn] [1] via [Anaconda] [2] to provide Machine Learning capabilities in a friendly Python environment with many scientific/mathematical libraries included.
 
-Machine Learning libraries being tested:
-	<ul>
-		<li>[TensorFlow] [1]</li>
-		<li>[scikit-learn] [2] via [Anaconda] [3]</li>
-	</ul>
+### Scapy 3
 
-	[1]: https://www.tensorflow.org/
-	[2]: http://scikit-learn.org/
-	[3]: https://www.continuum.io/downloads
+[scapy3] [3] for Python 3 to parse and manipulate PCAP (Network Packet Capture) files produced by the test range in order to feed into the Machine Learning libraries.
 
-### Other
+### GNU Parallel
 
-Other python libraries being used in this project:
-	<ul>
-		<li>[scapy] [4] or [scapy3] [5] for python 3</li>
-	</ul>
+[GNU Parallel] [4] to enable parallelisation of PCAP file processing within the container.
 
-	[4]: http://www.secdev.org/projects/scapy/
-	[5]: https://phaethon.github.io/scapy/api/installation.html
+### Scripts
 
-## Linux Utilities
-
-Linux utilities (non-standard) being used in this project:
-	<ul>
-		<li>[GNU Parallel] [6]</li>
-	</ul>
-
-	[6]: http://www.gnu.org/s/parallel
-
-# Usage
-
-## Parse PCAP file
+#### Convert PCAP files to CSV
 
 To parse IP (v4) packets from a PCAP file into a CSV representation (decimalised), run the pcap_to_csv.py script specifying the input PCAP file:
 
-	$ python pcap_to_csv.py -i data/2015/dayone > data/2015/dayone.csv
+	$ python3 /usr/local/sbin/pcap_to_csv.py -i /usr/local/sbin/log/current/*.pcap.* > /usr/local/sbin/data/*.csv
 
 See `pcap_to_csv.py -h` for more usage details.
 
-### CSV Output
+Parallel conversion of PCAP files is possible using /usr/local/sbin/scripts/parallel_convert_pcap_files.sh
+
+##### CSV Output
 
 Packets not containing an IP (version = 4) layer are ignored.
 
@@ -89,15 +70,19 @@ Fields included in output:
 	</li>
 </ul>
 
-## Graph Packet features
+#### Graph Packet features from CSV files
 
 Parse CSV packet file (in output format from PCAP parser) and produce graphs, run the csv_to_graph.py script specifying the input PCAP file:
 
-	$ python csv_to_graph.py -i data/2015/dayone.csv -o analysis/2015/dayone -f
+	$ python3 /usr/local/sbin/csv_to_graph.py -i /usr/local/sbin/data/*.csv -o /usr/local/sbin/analysis/* -f
 
 See `csv_to_graph.py -h` for more usage details.
 
-### Feature Graphs
+Parallel graphing of CSV files is possible using /usr/local/sbin/scripts/parallel_graph_csv_files.sh
+
+It can be advantageous to sort and split the CSV (PCAP) records between files by Destination IP prior to graphing the features. This can be achieved using /usr/local/sbin/scripts/sort_and_split_csv_files_by_dst_ip.sh
+
+##### Feature Graphs
 
 Optionally produce feature graphs over the entire dataset:
 
@@ -113,7 +98,7 @@ Optionally produce feature graphs over the entire dataset:
 	</li>
 </ul>
 
-### Destination Address Analysis Graphs
+##### Destination Address Analysis Graphs
 
 For each Destination IP, produce graphs:
 
@@ -155,15 +140,26 @@ For each Destination IP, produce graphs:
     </li>
 </ul>
 
-## Parallel Processing
+### External Access
 
-Several scripts exist to help speed-up parsing and analysis of large datasets (consisting of multiple files) on multi-core systems:
+Use of the shared /log volume allows Analyser to read and manipulate logs from other test range containers.
 
-<dl>
-	<dt>parallel_convert_pcap_files.sh</dt><dd>Convert a directory of PCAP files in parallel, outputting one CSV file per input<br>
-	Input args: DATA_DIR, CSV_DIR</dd>
-	<dt>parallel_split_csv_files_by_dst_ip.sh</dt><dd>Identify unique list of Destination IPs in one or more CSV files and produce one CSV per Destination IP (i.e. "conversationalise" traffic to/from individual Destination IPs), using the IP address as filename<br>
-	Input args: CSV_DIR, IP_CSV_DIR</dd>
-	<dt>parallel_graph_csv_files.sh</dt><dd>Graph multiple IP conversation CSV files, filtering output by Destination IP identified by the filename<br>
-	Input args: IP_CSV_DIR, GRAPH_DIR</dd>
-</dl>
+Config for the Python scripts (logging.yaml) is available for adjustment from the host machine.
+
+Data and Analysis volumes exist for script output to allow easy access from the host machine.
+
+## Execution
+
+Analyser is designed to be started along with the test range (docker-compose up -d), then used in an ad-hoc fashion with an interactive command line to allow execution of scripts and parsing/manipulation of data:
+
+	docker-compose run analyser
+or
+	docker attach analyser
+	
+
+## References
+
+[1]: http://scikit-learn.org/
+[2]: https://www.continuum.io/downloads
+[3]: https://phaethon.github.io/scapy/api/installation.html
+[4]: http://www.gnu.org/s/parallel

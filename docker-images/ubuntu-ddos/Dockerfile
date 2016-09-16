@@ -34,4 +34,3 @@ VOLUME [ "/log", "/bonesi-master/config" ]
 
 # by default, launch into bonesi (requires at least the target to be specified at runtime)
 ENTRYPOINT [ "bonesi", "-o", "/log/current/bonesi_stats_${HOSTNAME}.log", "-i", "/bonesi-master/config/bots.txt", "-l", "/bonesi-master/config/urllist.txt", "-b", "/bonesi-master/config/browserlist.txt" ]
-

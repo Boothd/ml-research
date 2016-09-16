@@ -28,4 +28,3 @@ ENV PATH="/usr/local/sbin:$PATH"
 
 # by default, launch into python_scanner (requires at least the target to be specified at runtime)
 ENTRYPOINT [ "python3", "/usr/local/sbin/port_scanner.py" ]
-

@@ -29,4 +29,3 @@ EXPOSE 8866
 
 # start NodeJS
 ENTRYPOINT [ "npm", "start" ]
-
